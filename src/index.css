@@ -1,0 +1,279 @@
+@import "tailwindcss";
+
+/* ============================================================
+   AURA — Premium Editorial design system
+   Electric cobalt blue + acid yellow on midnight. Blue = brand/premium,
+   yellow = the pop accent, archetype colors personalize per-Aura.
+   ============================================================ */
+@theme {
+  --color-ink: #07080f; /* midnight blue-black — richer than pure black */
+  --color-paper: #f5f4ec;
+  --color-blue: #2b3bff; /* electric cobalt — the premium brand color */
+  --color-blue-deep: #1620b0;
+  --color-lime: #e8ff3a; /* acid yellow accent */
+  --color-magenta: #ff3ea5;
+  --color-cyan: #3ad1ff;
+  --color-violet: #b89cff;
+  --color-smoke: #10121f; /* slightly blue-tinted panels */
+  --color-ash: #1b1e30;
+
+  --font-display: "Archivo", "Arial Black", sans-serif;
+  --font-sans: "Space Grotesk", system-ui, sans-serif;
+}
+
+:root {
+  /* The active archetype accent pair — overridden at runtime per-Aura. */
+  --accent: #e8ff3a;
+  --accent-2: #ff3ea5;
+  /* Brand constants used for premium chrome (CTAs, highlights, focus). */
+  --brand: #2b3bff;
+  --brand-pop: #e8ff3a;
+}
+
+/* NOTE: don't reset margin/padding on the universal selector — it overrides
+   Tailwind's own margin/padding utilities (e.g. mx-auto). Preflight handles resets. */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Lenis smooth-scroll */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* ---------- Typographic primitives ---------- */
+.display {
+  font-family: var(--font-display);
+  font-weight: 900;
+  line-height: 0.84;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+}
+.kicker {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+}
+.label {
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 0.62rem;
+}
+
+/* Fluid display scale */
+.t-hero {
+  font-size: clamp(3.5rem, 15vw, 13rem);
+}
+.t-xl {
+  font-size: clamp(2.5rem, 8vw, 6rem);
+}
+.t-lg {
+  font-size: clamp(1.8rem, 5vw, 3.5rem);
+}
+
+/* ---------- Brutalist building blocks ---------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--color-ink);
+  color: var(--accent);
+  border: 2px solid var(--accent);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+}
+.rule {
+  height: 2px;
+  background: currentColor;
+  width: 100%;
+}
+.btn-acid {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: var(--accent);
+  color: var(--color-ink);
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+.btn-acid:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--accent) 45%, transparent);
+  filter: brightness(1.05);
+}
+.btn-acid:active {
+  transform: translateY(0);
+}
+/* Premium primary — electric blue with a soft glow. */
+.btn-blue {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: var(--color-blue);
+  color: #fff;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 6px 24px color-mix(in srgb, var(--color-blue) 40%, transparent);
+  transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+.btn-blue:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 40px color-mix(in srgb, var(--color-blue) 55%, transparent);
+  filter: brightness(1.1);
+}
+.btn-blue:active {
+  transform: translateY(0);
+}
+/* Premium surface — subtle blue-tinted glass with a hairline border. */
+.surface {
+  background: linear-gradient(180deg, rgba(43, 59, 255, 0.06), rgba(255, 255, 255, 0.01));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+}
+.btn-ghost {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: transparent;
+  color: var(--color-paper);
+  border: 2px solid color-mix(in srgb, var(--color-paper) 30%, transparent);
+  padding: 0.85rem 1.6rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.btn-ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Marquee */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee var(--marquee-dur, 40s) linear infinite;
+}
+.marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Grain / noise overlay for texture */
+.grain::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.04;
+  z-index: 9999;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Brutalist range slider (seek + volume) */
+.range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--accent) 0%,
+    var(--accent) var(--range-pct, 0%),
+    rgba(255, 255, 255, 0.15) var(--range-pct, 0%),
+    rgba(255, 255, 255, 0.15) 100%
+  );
+  cursor: pointer;
+  outline: none;
+}
+.range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-paper);
+  border: 2px solid var(--color-ink);
+  transition: transform 0.12s ease;
+}
+.range:hover::-webkit-slider-thumb {
+  transform: scale(1.25);
+  background: var(--accent);
+}
+.range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-paper);
+  border: 2px solid var(--color-ink);
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--color-ink);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-ink);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-ash);
+  border-radius: 0;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee {
+    animation: none;
+  }
+  * {
+    scroll-behavior: auto !important;
+  }
+}

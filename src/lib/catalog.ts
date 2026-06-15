@@ -1,0 +1,102 @@
+/**
+ * Catalog client — real, recognizable music for everyone with no login.
+ *
+ * Playback + artwork come from the iTunes Search API (CORS-enabled, no auth,
+ * 30-second previews, covers Bollywood/Tollywood/Hollywood/indie). Real artist
+ * *headshots* are layered on top via the Spotify proxy (see lib/artistImage.ts)
+ * when configured — iTunes only exposes album/track art.
+ */
+
+export type Source = "itunes" | "spotify";
+
+export interface PlayableTrack {
+  id: string;
+  title: string;
+  artist: string;
+  artwork?: string;
+  /** Playable audio URL (a 30s preview). */
+  url: string;
+  durationSec: number;
+  genre?: string;
+  source: Source;
+}
+
+/** Upscale iTunes artwork (default thumbs are 100x100). */
+export function artUrl(raw: string | undefined, size = 600): string | undefined {
+  return raw ? raw.replace(/\/\d+x\d+bb\.(jpg|png)/, `/${size}x${size}bb.$1`) : undefined;
+}
+
+function mapItunes(x: any): PlayableTrack {
+  return {
+    id: `itunes-${x.trackId}`,
+    title: x.trackName,
+    artist: x.artistName,
+    artwork: artUrl(x.artworkUrl100, 600),
+    url: x.previewUrl,
+    durationSec: x.trackTimeMillis ? Math.round(x.trackTimeMillis / 1000) : 30,
+    genre: x.primaryGenreName,
+    source: "itunes",
+  };
+}
+
+async function itunes(params: Record<string, string>): Promise<any[]> {
+  const u = new URL("https://itunes.apple.com/search");
+  u.searchParams.set("media", "music");
+  for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
+  const r = await fetch(u.toString());
+  if (!r.ok) throw new Error(`iTunes ${r.status}`);
+  const j = await r.json();
+  return Array.isArray(j.results) ? j.results : [];
+}
+
+/** Search songs by free text (artist, title, etc.). */
+export async function searchSongs(term: string, limit = 24): Promise<PlayableTrack[]> {
+  const rows = await itunes({ term, entity: "song", limit: String(limit) });
+  return rows.filter((x) => x.previewUrl).map(mapItunes);
+}
+
+/** Top tracks for a specific artist (best-effort filter to that artist). */
+export async function tracksByArtist(artist: string, limit = 12): Promise<PlayableTrack[]> {
+  const rows = await itunes({ term: artist, entity: "song", limit: String(limit * 2), attribute: "artistTerm" });
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const want = norm(artist);
+  const tracks = rows
+    .filter((x) => x.previewUrl)
+    .map(mapItunes)
+    .filter((t) => norm(t.artist).includes(want) || want.includes(norm(t.artist)));
+  // De-dupe by title.
+  const seen = new Set<string>();
+  return tracks.filter((t) => {
+    const k = t.title.toLowerCase().split("(")[0].trim();
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  }).slice(0, limit);
+}
+
+/** A representative cover image for an artist (their top track's artwork). */
+export async function artistCover(artist: string): Promise<string | undefined> {
+  try {
+    const t = await tracksByArtist(artist, 1);
+    return t[0]?.artwork;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Build a mixed queue from several artists (used for Aura Radio). */
+export async function tracksFromArtists(artists: string[], perArtist = 2): Promise<PlayableTrack[]> {
+  const results = await Promise.allSettled(artists.map((a) => tracksByArtist(a, perArtist)));
+  const out: PlayableTrack[] = [];
+  results.forEach((r) => {
+    if (r.status === "fulfilled") out.push(...r.value.slice(0, perArtist));
+  });
+  return out;
+}
+
+export function fmtTime(sec: number): string {
+  if (!isFinite(sec) || sec < 0) return "0:00";
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
