@@ -3,11 +3,17 @@ import Landing from "./sections/Landing";
 import TastePicker from "./sections/TastePicker";
 import AuraReveal from "./sections/AuraReveal";
 import Soulmate from "./sections/Soulmate";
+import SpotifyCallback from "./sections/SpotifyCallback";
 import AppShell from "./components/app/AppShell";
 import Home from "./sections/app/Home";
 import NowPlaying from "./sections/app/NowPlaying";
 import Discover from "./sections/app/Discover";
-import ComingSoon from "./sections/app/ComingSoon";
+import Concerts from "./sections/app/Concerts";
+import Jam from "./sections/app/Jam";
+import Frequency from "./sections/app/Frequency";
+import Library from "./sections/app/Library";
+import Wrapped from "./sections/app/Wrapped";
+import NotFound from "./sections/NotFound";
 
 export const router = createBrowserRouter([
   { path: "/", element: <Landing /> },
@@ -15,6 +21,7 @@ export const router = createBrowserRouter([
   { path: "/a/:code", element: <AuraReveal /> },
   { path: "/s/:a", element: <Soulmate /> },
   { path: "/s/:a/:b", element: <Soulmate /> },
+  { path: "/auth/spotify/callback", element: <SpotifyCallback /> },
   {
     path: "/app",
     element: <AppShell />,
@@ -23,34 +30,13 @@ export const router = createBrowserRouter([
       { path: "home", element: <Home /> },
       { path: "now", element: <NowPlaying /> },
       { path: "discover", element: <Discover /> },
-      {
-        path: "library",
-        element: (
-          <ComingSoon
-            title="Your Library"
-            blurb="Collaborative playlists with auto-generated Aura covers, where every contributor shows up as their own color. Coming next."
-          />
-        ),
-      },
-      {
-        path: "jam",
-        element: (
-          <ComingSoon
-            title="Jam"
-            blurb="Live rooms where everyone's Aura merges into one group Aura, and playback stays perfectly in sync. Realtime build is next."
-          />
-        ),
-      },
-      {
-        path: "wrapped",
-        element: (
-          <ComingSoon
-            title="Wrapped — always on"
-            blurb="Not once a year. A living recap that watches your Aura evolve through the seasons and culminates in your future self."
-          />
-        ),
-      },
+      { path: "concerts", element: <Concerts /> },
+      { path: "library", element: <Library /> },
+      { path: "jam", element: <Jam /> },
+      { path: "jam/:room", element: <Jam /> },
+      { path: "frequency", element: <Frequency /> },
+      { path: "wrapped", element: <Wrapped /> },
     ],
   },
-  { path: "*", element: <Navigate to="/" replace /> },
+  { path: "*", element: <NotFound /> },
 ]);

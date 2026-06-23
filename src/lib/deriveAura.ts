@@ -1,5 +1,5 @@
 import type { Aura, FeatureVector, TimeOfDay } from "./types";
-import { ARTIST_BY_ID } from "../data/artists";
+import { ROSTER_BY_NAME } from "../data/roster";
 import { MOODS, TIMES } from "../data/moods";
 import { ARCHETYPES } from "../data/archetypes";
 
@@ -36,8 +36,9 @@ export function deriveAura(
   time: TimeOfDay
 ): Aura {
   // 1. Base vector = mean of chosen artists (fallback to neutral center).
+  // `artistIds` holds roster artist NAMES.
   const base: FeatureVector = { energy: 0.5, valence: 0.5, tempo: 0.5, acoustic: 0.5 };
-  const chosen = artistIds.map((id) => ARTIST_BY_ID[id]).filter(Boolean);
+  const chosen = artistIds.map((id) => ROSTER_BY_NAME[id]).filter(Boolean);
   if (chosen.length) {
     for (const k of FEATURES) {
       base[k] = chosen.reduce((s, a) => s + a.features[k], 0) / chosen.length;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Aura } from "../lib/types";
 import { decodeAura } from "../lib/encodeAura";
 
@@ -31,5 +31,5 @@ export function useMyAura(): Aura | null {
       window.removeEventListener("storage", update);
     };
   }, []);
-  return code ? decodeAura(code) : null;
+  return useMemo(() => (code ? decodeAura(code) : null), [code]);
 }

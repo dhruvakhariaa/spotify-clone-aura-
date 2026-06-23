@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type MutableRefObject, type ReactNode } from "react";
 import type { PlayableTrack } from "../lib/catalog";
+import { recordListen } from "./wrapped";
 
 interface PlayerState {
   current: PlayableTrack | null;
@@ -83,6 +84,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     a.src = current.url;
     setLoading(true);
     setCurrentTime(0);
+    recordListen(current);
     a.play().then(() => setLoading(false)).catch(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.id]);

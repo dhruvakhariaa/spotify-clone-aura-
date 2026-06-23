@@ -1,5 +1,5 @@
 import type { Aura, TimeOfDay } from "./types";
-import { ARTISTS } from "../data/artists";
+import { ROSTER } from "../data/roster";
 import { MOODS, TIMES } from "../data/moods";
 import { deriveAura } from "./deriveAura";
 
@@ -22,7 +22,7 @@ export function encodePicks(
   moodIds: string[],
   time: TimeOfDay
 ): string {
-  const ai = artistIds.map((id) => ARTISTS.findIndex((a) => a.id === id)).filter((i) => i >= 0);
+  const ai = artistIds.map((name) => ROSTER.findIndex((a) => a.name === name)).filter((i) => i >= 0);
   const mi = moodIds.map((id) => MOODS.findIndex((m) => m.id === id)).filter((i) => i >= 0);
   const ti = Math.max(0, TIMES.findIndex((t) => t.id === time));
   return toB64Url(JSON.stringify([ti, ai, mi]));
@@ -39,7 +39,7 @@ export function decodeAura(code: string): Aura | null {
     if (!Array.isArray(parsed)) return null;
     const [ti, ai, mi] = parsed as [number, number[], number[]];
     const time = (TIMES[ti]?.id ?? "dusk") as TimeOfDay;
-    const artistIds = (ai ?? []).map((i) => ARTISTS[i]?.id).filter(Boolean) as string[];
+    const artistIds = (ai ?? []).map((i) => ROSTER[i]?.name).filter(Boolean) as string[];
     const moodIds = (mi ?? []).map((i) => MOODS[i]?.id).filter(Boolean) as string[];
     if (!artistIds.length) return null;
     return deriveAura(artistIds, moodIds, time);

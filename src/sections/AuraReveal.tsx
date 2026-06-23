@@ -6,8 +6,10 @@ import { decodeAura } from "../lib/encodeAura";
 import { saveAuraCode } from "../state/aura";
 import { recordCanvasToWebm, downloadBlob } from "../lib/exportVideo";
 import { AuraPoster } from "../components/AuraPoster";
+import { ThemeToggle } from "../components/ThemeToggle";
+import { playReactionSound, reactionForAura, type ReactionTone } from "../lib/reactions";
 
-function RevealOverlay({ name, accent, onDone }: { name: string; accent: string; onDone: () => void }) {
+function RevealOverlay({ name, accent, tone, onDone }: { name: string; accent: string; tone: ReactionTone; onDone: () => void }) {
   const [phase, setPhase] = useState(0);
   useEffect(() => {
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -20,6 +22,10 @@ function RevealOverlay({ name, accent, onDone }: { name: string; accent: string;
     const t3 = setTimeout(onDone, 3000);
     return () => [t1, t2, t3].forEach(clearTimeout);
   }, [onDone]);
+
+  useEffect(() => {
+    if (phase === 2) playReactionSound(tone);
+  }, [phase, tone]);
 
   return (
     <motion.div
@@ -130,13 +136,21 @@ export default function AuraReveal() {
     >
       <AnimatePresence onExitComplete={() => params.get("reveal") && setParams({}, { replace: true })}>
         {revealing && (
-          <RevealOverlay name={aura.archetype.name} accent={aura.archetype.accent} onDone={() => setRevealing(false)} />
+          <RevealOverlay
+            name={aura.archetype.name}
+            accent={aura.archetype.accent}
+            tone={reactionForAura(aura).tone}
+            onDone={() => setRevealing(false)}
+          />
         )}
       </AnimatePresence>
 
       <nav className="flex items-center justify-between px-5 md:px-10 py-5">
         <Link to="/" className="display text-xl">AURA</Link>
-        <Link to="/onboard" className="btn-ghost text-xs">Make your own</Link>
+        <div className="flex items-center gap-2">
+          <ThemeToggle compact />
+          <Link to="/onboard" data-audio-tone="make" className="btn-ghost text-xs">Make your own</Link>
+        </div>
       </nav>
 
       <div className="max-w-[1100px] mx-auto px-5 md:px-10 pb-24 grid lg:grid-cols-[420px_1fr] gap-10 lg:gap-16 items-start">
@@ -182,7 +196,7 @@ export default function AuraReveal() {
           </div>
 
           <div className="flex flex-wrap gap-3 mb-4">
-            <Link to={`/s/${code}`} className="btn-acid">💞 Find your Soulmate</Link>
+            <Link to={`/s/${code}`} data-audio-tone="soulmate" className="btn-acid">💞 Find your Soulmate</Link>
             <Link to="/app/home" className="btn-ghost">Enter the app ↗</Link>
           </div>
           <div className="flex flex-wrap gap-3">

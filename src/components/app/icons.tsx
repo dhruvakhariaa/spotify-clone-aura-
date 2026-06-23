@@ -27,6 +27,8 @@ export const IconCompass = svg(<><circle cx="12" cy="12" r="9" /><path d="m15.5 
 export const IconLibrary = svg(<><path d="M5 4v16M10 4v16" /><path d="m15 5 4 15" /></>);
 export const IconJam = svg(<><circle cx="7" cy="17" r="3" /><circle cx="17" cy="15" r="3" /><path d="M10 17V6l10-2v11" /></>);
 export const IconWrapped = svg(<><path d="M12 3v18M3 12h18" /><circle cx="12" cy="12" r="9" /></>);
+export const IconGlobe = svg(<><circle cx="12" cy="12" r="9" /><path d="M3 12h18" /><path d="M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18" /></>);
+export const IconTicket = svg(<><path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z" /><path d="M9 7v10" /></>);
 export const IconPlay = svg(<path d="M7 4v16l13-8z" />, true);
 export const IconPause = svg(<><rect x="6" y="4" width="4" height="16" rx="1" /><rect x="14" y="4" width="4" height="16" rx="1" /></>, true);
 export const IconNext = svg(<><path d="M6 4v16l10-8z" fill="currentColor" /><rect x="17" y="4" width="2.5" height="16" rx="1" fill="currentColor" /></>, true);
