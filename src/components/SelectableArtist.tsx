@@ -40,7 +40,7 @@ export function SelectableArtist({ name, sub, selected, disabled, onToggle }: Pr
       ref={ref}
       onClick={onToggle}
       disabled={disabled && !selected}
-      className={`group relative text-left rounded-xl overflow-hidden transition-all disabled:opacity-30 ${
+      className={`selectable-artist group relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.025] text-left transition-all disabled:opacity-30 ${
         selected ? "ring-2 ring-[color:var(--color-blue)] ring-offset-2 ring-offset-[color:var(--color-ink)]" : ""
       }`}
     >

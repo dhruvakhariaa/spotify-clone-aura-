@@ -155,7 +155,7 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="border-y border-white/10 bg-[#0c0f18] px-5 py-5 md:px-10">
+      <section className="landing-stat-strip border-y border-white/10 bg-[#0c0f18] px-5 py-5 md:px-10">
         <div className="mx-auto flex max-w-[1480px] flex-wrap items-center justify-between gap-4">
           {[
             ["30 sec", "previews without login"],
