@@ -5,6 +5,34 @@ below and it appears automatically — no code changes. Until a file exists, the
 app shows a labelled "Image slot" placeholder telling you exactly what goes
 there (rendered by `src/components/app/PlaceholderImage.tsx`).
 
+---
+
+## 🏙️ Landing pixel city — `public/landing/`
+
+The landing (`src/sections/Landing.tsx`) is an interactive pixel-art city. The
+clickable "characters" are **hotspots positioned over figures already painted
+into the city image** (so no separate sprite cut-outs are required).
+
+| File | Size | Used for |
+|------|------|----------|
+| `landing/city.png` | landscape · ~1600×900 | Full-bleed hero scene (currently `final-city.png`) |
+
+**Hotspot positions** live in `CONCEPTS` in
+[`src/components/landing/concepts.tsx`](../src/components/landing/concepts.tsx)
+as `x`/`y` percentages — nudge them if you swap the city image so each pin sits
+over the right character.
+
+**Optional — free-roaming sprites:** `CityCharacter` accepts a `spriteSrc` prop.
+Drop **clean, transparent-background PNG** sprites into `public/landing/characters/`
+and pass them through to turn hotspots into walking characters.
+
+> ⚠️ The reference sprites (`public/references/pixel-character{1,2,3}.jpg`,
+> `characters.webp`) are **watermarked stock on white backgrounds** — not usable
+> as-is (the white box + watermark would show). They need a background-knockout +
+> watermark crop before they can be used as `spriteSrc`. The three of them (cat
+> DJ, guitarist, singer) already appear cleanly inside `city.png`, which is why
+> the landing uses in-art hotspots by default.
+
 > Tip: keep files reasonably small (≤ ~400 KB). JPG/PNG/WebP all work — the
 > paths below use `.jpg`; if you use a different extension, rename to `.jpg`
 > or update the path in the matching data file.
