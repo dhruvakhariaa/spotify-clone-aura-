@@ -73,6 +73,59 @@ policy permitting the action — re-check steps 3 and 5.
 
 ---
 
+## 2b) Accounts — Supabase Auth + Google (required to enter the app)
+
+The app now requires a real account to open `/app/*`. Auth is handled by
+**Supabase Auth** (email/password, Google OAuth, and an anonymous "guest" mode)
+using the same `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` from §2 — no extra
+server. The session is held by `@supabase/supabase-js` (persisted to
+localStorage, auto-refreshed). The guard lives in
+[`src/components/auth/RequireAuth.tsx`](./src/components/auth/RequireAuth.tsx);
+the provider in [`src/state/auth.tsx`](./src/state/auth.tsx).
+
+### a. Apply the schema (adds RLS)
+Run [`supabase/schema.sql`](./supabase/schema.sql) in the **SQL Editor**. It adds
+the per-user tables (`auras`, `likes`) and **Row Level Security** so each user
+(including guests) can only read/write their own `playlists`, `playlist_tracks`,
+`auras`, and `likes`. REST calls now send the signed-in user's access token, so
+`auth.uid()` policies resolve correctly. (Shared catalog tables — `artists`,
+`tracks`, `karaoke_assets` — keep RLS off so the Universe cache stays writable.)
+
+### b. Enable Email auth
+**Authentication → Providers → Email** is on by default. For the smoothest local
+demo you can turn **"Confirm email" off** (Authentication → Providers → Email →
+*Confirm email*) so signup logs the user straight in. With it on, signup shows a
+"check your email" screen and the user logs in after confirming.
+
+### c. Enable Google OAuth (optional but recommended)
+1. **Authentication → Providers → Google → Enable.**
+2. Create OAuth credentials in the
+   [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+   (OAuth client → Web application).
+3. **Authorized redirect URI** — add the Supabase callback shown on that provider
+   page, i.e. `https://YOUR-PROJECT.supabase.co/auth/v1/callback`.
+4. Paste the Google **Client ID** + **Client secret** into the Supabase Google
+   provider and save.
+5. In **Authentication → URL Configuration**, add your app origins to
+   **Redirect URLs**: `http://127.0.0.1:5173/auth/callback` (and
+   `http://localhost:5173/auth/callback`, plus your deployed origin). The app
+   sends the user to `…/auth/callback?next=…` after Google.
+
+Without Google configured, **email/password** and **Continue as guest** still
+work end-to-end. If Supabase isn't configured at all, the guard lets visitors
+through so the showcase stays usable local-first.
+
+### d. Enable anonymous (guest) sign-in
+**Authentication → Providers → Anonymous sign-ins → Enable** powers the
+"Continue as guest" button (a real, held session with no email).
+
+> **Per-user data:** playlists persist to Supabase scoped to the logged-in user
+> (RLS-protected). Liked songs and the Aura currently persist in localStorage and
+> are tied to the session via the user id; full cross-device server hydration of
+> likes/aura is the next increment (tables + policies are already in the schema).
+
+---
+
 ## 3) Real artist headshots (optional)
 
 iTunes artwork is used by default. For real Spotify **headshots**, run the
