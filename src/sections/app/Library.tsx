@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowUpRight, Check, Heart, Loader2, Plus, RefreshCw, Users, X } from "lucide-react";
+import { ArrowUpRight, Check, Heart, Loader2, Play, Plus, RefreshCw, Shuffle, Users, X } from "lucide-react";
 import { PLAYLIST_CONCEPTS } from "../../data/editorial";
 import type { PlayableTrack } from "../../lib/catalog";
 import { ensureAuraUniverse } from "../../lib/universe";
@@ -8,7 +8,7 @@ import { readSpotifySession } from "../../lib/spotifyAuth";
 import { useMyAura } from "../../state/aura";
 import { useLikedSongs } from "../../state/likedSongs";
 import { usePlayer } from "../../state/player";
-import { createAuraPlaylist, syncAuraPlaylistToSpotify, useAuraPlaylists, type AuraPlaylist } from "../../state/playlists";
+import { addTracksToAuraPlaylist, createAuraPlaylist, syncAuraPlaylistToSpotify, useAuraPlaylists, type AuraPlaylist } from "../../state/playlists";
 import { GenerativeMark } from "../../components/GenerativeMark";
 
 type SeedSource = "manual" | "queue" | "liked" | "universe";
@@ -132,10 +132,25 @@ function PlaylistModal({
   );
 }
 
-function SavedPlaylistCard({ playlist }: { playlist: AuraPlaylist }) {
+function SavedPlaylistCard({
+  playlist,
+  player,
+  likedSongs,
+}: {
+  playlist: AuraPlaylist;
+  player: ReturnType<typeof usePlayer>;
+  likedSongs: PlayableTrack[];
+}) {
   const [syncing, setSyncing] = useState(false);
   const [message, setMessage] = useState("");
   const canSync = Boolean(readSpotifySession() && playlist.tracks.some((track) => track.spotifyUri));
+  const hasTracks = playlist.tracks.length > 0;
+  const addCurrent = () => {
+    if (player.current) addTracksToAuraPlaylist(playlist.id, [player.current]);
+  };
+  const addLiked = () => {
+    if (likedSongs.length) addTracksToAuraPlaylist(playlist.id, likedSongs);
+  };
 
   const sync = async () => {
     setSyncing(true);
@@ -167,14 +182,48 @@ function SavedPlaylistCard({ playlist }: { playlist: AuraPlaylist }) {
           </div>
         ))}
       </div>
-      <button
-        onClick={sync}
-        disabled={!canSync || syncing || Boolean(playlist.spotifyPlaylistId)}
-        className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-xs font-bold uppercase text-white/62 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        {syncing ? <Loader2 className="animate-spin" size={14} /> : <RefreshCw size={14} />}
-        {playlist.spotifyPlaylistId ? "Spotify synced" : "Sync to Spotify"}
-      </button>
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          onClick={() => player.play(playlist.tracks)}
+          disabled={!hasTracks}
+          className="btn-blue inline-flex items-center gap-2 px-4 py-2 text-xs disabled:opacity-40"
+        >
+          <Play size={14} fill="currentColor" /> Play
+        </button>
+        <button
+          onClick={() => player.shufflePlay(playlist.tracks)}
+          disabled={!hasTracks}
+          className="btn-ghost inline-flex items-center gap-2 px-4 py-2 text-xs disabled:opacity-40"
+        >
+          <Shuffle size={14} /> Shuffle
+        </button>
+        <button
+          onClick={sync}
+          disabled={!canSync || syncing || Boolean(playlist.spotifyPlaylistId)}
+          className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-xs font-bold uppercase text-white/62 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {syncing ? <Loader2 className="animate-spin" size={14} /> : <RefreshCw size={14} />}
+          {playlist.spotifyPlaylistId ? "Synced" : "Sync"}
+        </button>
+      </div>
+      {!hasTracks && (
+        <div className="mt-3 flex flex-wrap gap-2 text-xs">
+          <button
+            onClick={addCurrent}
+            disabled={!player.current}
+            className="rounded-full border border-white/10 px-3 py-1.5 font-bold text-white/62 hover:text-white disabled:opacity-40"
+          >
+            + Add current track
+          </button>
+          <button
+            onClick={addLiked}
+            disabled={!likedSongs.length}
+            className="rounded-full border border-white/10 px-3 py-1.5 font-bold text-white/62 hover:text-white disabled:opacity-40"
+          >
+            + Add liked songs
+          </button>
+        </div>
+      )}
       {message && <p className="mt-3 text-xs font-bold text-white/48">{message}</p>}
     </article>
   );
@@ -207,7 +256,7 @@ export default function Library() {
         {playlists.length > 0 && (
           <section className="mb-8 grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
             {playlists.map((playlist) => (
-              <SavedPlaylistCard key={playlist.id} playlist={playlist} />
+              <SavedPlaylistCard key={playlist.id} playlist={playlist} player={player} likedSongs={likedSongs} />
             ))}
           </section>
         )}

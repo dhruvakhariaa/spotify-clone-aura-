@@ -8,6 +8,14 @@ import type { FeatureVector } from "../lib/types";
  */
 export type RosterCategory = "indie-in" | "bollywood" | "tollywood" | "hollywood";
 
+/** Language lane for the Universe arc: India-first categories read as Hindi/Indian,
+ *  `hollywood` reads as English. Derived purely from category (the only signal). */
+export type RosterLanguage = "indian" | "english";
+
+export function languageForCategory(cat: RosterCategory): RosterLanguage {
+  return cat === "hollywood" ? "english" : "indian";
+}
+
 export const CATEGORY_LABELS: Record<RosterCategory, string> = {
   "indie-in": "Indian Indie",
   bollywood: "Bollywood",
@@ -78,6 +86,11 @@ export const ROSTER: RosterArtist[] = [
 
 export const ROSTER_BY_NAME: Record<string, RosterArtist> = Object.fromEntries(
   ROSTER.map((a) => [a.name, a])
+);
+
+/** Lower-cased artist name → language lane, for tagging Universe tracks by artist. */
+export const LANGUAGE_BY_ARTIST: Record<string, RosterLanguage> = Object.fromEntries(
+  ROSTER.map((a) => [a.name.toLowerCase(), languageForCategory(a.category)])
 );
 
 export function rosterByCategory(cat: RosterCategory): RosterArtist[] {

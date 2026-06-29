@@ -36,7 +36,6 @@ export function SonicCursorTrail({ enabled = true }: { enabled?: boolean }) {
           label: STICKERS[id % STICKERS.length],
         },
       ]);
-      playReactionSound("cursor");
       window.setTimeout(() => {
         setItems((current) => current.filter((item) => item.id !== id));
       }, 760);

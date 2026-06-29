@@ -119,13 +119,11 @@ export function RetroPlayer() {
   }, [deviceWidth]);
 
   const toggleLike = () => {
-    playReactionSound("tap");
     if (!p.current) return;
     setLiked(toggleLikedSong(p.current));
   };
 
   const resizeDevice = (next: number) => {
-    playReactionSound("tap");
     setDeviceWidth(Math.min(MAX_DEVICE_WIDTH, Math.max(MIN_DEVICE_WIDTH, next)));
   };
 
@@ -152,7 +150,6 @@ export function RetroPlayer() {
     const end = () => {
       dragRef.current = null;
       setDragging(false);
-      playReactionSound("tap");
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", end);
       window.removeEventListener("pointercancel", end);
@@ -190,7 +187,6 @@ export function RetroPlayer() {
     const end = () => {
       resizeRef.current = null;
       setResizing(false);
-      playReactionSound("tap");
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", end);
       window.removeEventListener("pointercancel", end);
@@ -266,10 +262,7 @@ export function RetroPlayer() {
           <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={() => {
-                playReactionSound("tap");
-                p.toggleShuffle();
-              }}
+              onClick={() => p.toggleShuffle()}
               className={`grid size-7 place-items-center rounded-md border border-white/10 bg-white/[0.035] hover:text-white ${
                 p.shuffleEnabled ? "text-[#b7a0ff]" : "text-white/58"
               }`}
@@ -280,10 +273,7 @@ export function RetroPlayer() {
             </button>
             <button
               type="button"
-              onClick={() => {
-                playReactionSound("tap");
-                p.toggleKaraoke();
-              }}
+              onClick={() => p.toggleKaraoke()}
               disabled={!p.canUseKaraoke && !p.karaokeMode}
               className={`grid size-7 place-items-center rounded-md border border-white/10 bg-white/[0.035] hover:text-white disabled:cursor-not-allowed disabled:opacity-35 ${
                 p.karaokeMode ? "text-[#e8ff3a]" : "text-white/58"
@@ -304,10 +294,7 @@ export function RetroPlayer() {
             </button>
             <button
               type="button"
-              onClick={() => {
-                playReactionSound("tap");
-                setIpodVisible(false);
-              }}
+              onClick={() => setIpodVisible(false)}
               className="grid size-7 place-items-center rounded-md border border-white/10 bg-white/[0.035] text-white/58 hover:text-white"
               aria-label="Hide iPod player"
               title="Hide iPod"
@@ -361,10 +348,7 @@ export function RetroPlayer() {
               <Heart size={15} fill={liked ? "currentColor" : "none"} className={liked ? "text-[color:var(--accent)]" : ""} />
             </button>
             <button
-              onClick={() => {
-                playReactionSound("tap");
-                p.prev();
-              }}
+              onClick={() => p.prev()}
               className="absolute left-[4%] top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-full text-white/70 transition-colors hover:text-white"
               aria-label="Previous song"
               title="Previous"
@@ -372,10 +356,7 @@ export function RetroPlayer() {
               <IconPrev s={17} />
             </button>
             <button
-              onClick={() => {
-                playReactionSound("tap");
-                p.next();
-              }}
+              onClick={() => p.next()}
               className="absolute right-[4%] top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-full text-white/70 transition-colors hover:text-white"
               aria-label="Next song"
               title="Next"
@@ -386,10 +367,7 @@ export function RetroPlayer() {
               Aura
             </span>
             <button
-              onClick={() => {
-                playReactionSound("tap");
-                p.toggle();
-              }}
+              onClick={() => p.toggle()}
               disabled={!p.current}
               className="absolute left-1/2 top-1/2 grid size-[38%] -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white/16 bg-white/[0.09] text-white shadow-[0_4px_14px_rgba(0,0,0,.4),inset_0_1px_0_rgba(255,255,255,.2)] transition-transform hover:scale-105 disabled:opacity-40"
               aria-label={p.isPlaying ? "Pause" : "Play"}

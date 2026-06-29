@@ -1,4 +1,4 @@
-import { ROSTER } from "../data/roster";
+import { ROSTER, LANGUAGE_BY_ARTIST, type RosterLanguage } from "../data/roster";
 import { tracksFromArtists, type PlayableTrack } from "./catalog";
 import { searchSpotifyTracks } from "./spotifyApi";
 import { hasSupabaseConfig, supabaseRest, supabaseUpsert } from "./supabaseClient";
@@ -17,6 +17,53 @@ export interface UniverseTrack extends PlayableTrack {
   previewUrl?: string;
   karaokeStatus?: "ready" | "pending" | "unavailable";
   karaokeUrl?: string;
+  language?: RosterLanguage;
+}
+
+/** Tag a track's language by the first roster artist named in its credit string.
+ *  Defaults to "indian" since the roster (and the app) is India-first. */
+function languageForTrack(track: PlayableTrack): RosterLanguage {
+  const hay = track.artist.toLowerCase();
+  for (const artist of ROSTER) {
+    if (hay.includes(artist.name.toLowerCase())) {
+      return LANGUAGE_BY_ARTIST[artist.name.toLowerCase()];
+    }
+  }
+  return "indian";
+}
+
+/**
+ * Order tracks as a deterministic Hindi/Indian → English gradient arc, not a hard
+ * cut: a pure-Indian opening block, then a crossfade zone whose English density
+ * rises linearly to the end. Deterministic (accumulator, no RNG) so the grid order
+ * is stable across loads and shuffle stays a separate, explicit choice.
+ */
+export function buildUniverseArc(tracks: UniverseTrack[]): UniverseTrack[] {
+  const tagged = tracks.map((t) => ({ ...t, language: t.language ?? languageForTrack(t) }));
+  const indian = tagged.filter((t) => t.language === "indian");
+  const english = tagged.filter((t) => t.language === "english");
+  if (!indian.length || !english.length) return tagged;
+
+  const openCount = Math.round(indian.length * 0.55); // pure Hindi/Indian opening
+  const out: UniverseTrack[] = indian.slice(0, openCount);
+  const indianMid = indian.slice(openCount);
+
+  const total = indianMid.length + english.length;
+  let ii = 0;
+  let ei = 0;
+  let acc = 0;
+  for (let step = 0; step < total; step += 1) {
+    const bias = total > 1 ? step / (total - 1) : 1; // rising English pressure 0..1
+    acc += bias;
+    const wantEnglish = ei < english.length && (ii >= indianMid.length || acc >= 1);
+    if (wantEnglish) {
+      out.push(english[ei++]);
+      acc -= 1;
+    } else {
+      out.push(indianMid[ii++]);
+    }
+  }
+  return out;
 }
 
 export function hasSeenUniversePrompt() {
@@ -180,13 +227,14 @@ export async function buildAuraUniverse(perArtist = 12) {
   if (!tracks.length) tracks = await discoverFallback(Math.min(4, perArtist));
   const deduped = dedupeTracks(tracks).filter((track) => track.spotifyUri || track.url);
   const withKaraoke = await applyKaraokeAssets(deduped);
-  writeCachedUniverseTracks(withKaraoke);
-  persistUniverse(withKaraoke).catch(() => {});
-  return withKaraoke;
+  const arc = buildUniverseArc(withKaraoke);
+  writeCachedUniverseTracks(arc);
+  persistUniverse(arc).catch(() => {});
+  return arc;
 }
 
 export async function ensureAuraUniverse() {
   const cached = getCachedUniverseTracks();
-  if (cached.length) return applyKaraokeAssets(cached);
+  if (cached.length) return buildUniverseArc(await applyKaraokeAssets(cached));
   return buildAuraUniverse();
 }

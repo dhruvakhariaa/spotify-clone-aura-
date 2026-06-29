@@ -270,6 +270,14 @@ html.lenis body {
     transform: translateX(-50%);
   }
 }
+
+/* Landing pixel-city ambient neon flicker. */
+@keyframes auraFlicker {
+  0%, 100% { opacity: 0.55; }
+  45% { opacity: 0.85; }
+  55% { opacity: 0.4; }
+  70% { opacity: 0.75; }
+}
 .marquee {
   display: flex;
   width: max-content;
