@@ -12,7 +12,7 @@ export const CATEGORY_LABELS: Record<RosterCategory, string> = {
   "indie-in": "Indian Indie",
   bollywood: "Bollywood",
   tollywood: "Tollywood / South",
-  hollywood: "Hollywood / Global",
+  hollywood: "Global",
 };
 
 export interface RosterArtist {

@@ -65,7 +65,7 @@ const CATEGORY_CARDS: DisplayCardProps[] = [
   {
     id: "hollywood",
     icon: <Globe2 className="size-4" />,
-    title: "Hollywood/Global",
+    title: "Global",
     description: "Pop, rap, alt, stadiums",
     date: `${ROSTER.filter((a) => a.category === "hollywood").length} artists`,
     iconClassName: "bg-[#315dff] text-white",

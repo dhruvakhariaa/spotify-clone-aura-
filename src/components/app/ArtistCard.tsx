@@ -58,7 +58,7 @@ export function ArtistCard({ name, sub, onPlay, loading }: Props) {
         </div>
       </div>
       <div className="min-w-0 w-full">
-        <div className="font-bold truncate">{name}</div>
+        <div className="font-bold leading-tight line-clamp-2">{name}</div>
         {sub && <div className="text-xs text-white/45 truncate">{sub}</div>}
       </div>
     </button>

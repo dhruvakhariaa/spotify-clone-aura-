@@ -39,7 +39,7 @@ export function DisplayCard({
       whileTap={{ scale: 0.98, rotateX: 12 }}
       onClick={() => onSelect?.(id)}
       className={cn(
-        "relative flex h-36 w-[min(82vw,22rem)] select-none flex-col justify-between overflow-hidden rounded-xl border border-black/10 bg-white/[0.82] px-4 py-3 text-left text-[#202126] shadow-[0_22px_70px_rgba(0,0,0,.16)] backdrop-blur-xl transition-all duration-500 after:absolute after:-right-2 after:top-0 after:h-full after:w-20 after:bg-gradient-to-l after:from-white/70 after:to-transparent after:content-[''] hover:border-black/20 hover:bg-white/[0.92]",
+        "display-card relative flex h-36 w-[min(82vw,22rem)] select-none flex-col justify-between overflow-hidden rounded-xl border border-black/10 bg-white/[0.82] px-4 py-3 text-left text-[#202126] shadow-[0_22px_70px_rgba(0,0,0,.16)] backdrop-blur-xl transition-all duration-500 after:absolute after:-right-2 after:top-0 after:h-full after:w-20 after:bg-gradient-to-l after:from-white/70 after:to-transparent after:content-[''] hover:border-black/20 hover:bg-white/[0.92]",
         selected && "border-white/70 bg-white/[0.94] shadow-[0_18px_60px_rgba(255,255,255,.12)]",
         className
       )}

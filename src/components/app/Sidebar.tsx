@@ -56,7 +56,10 @@ export function Sidebar({ aura }: { aura: Aura | null }) {
       </nav>
 
       {/* your aura */}
-      <div className="p-3 lg:p-4 border-t-2 border-white/10 shrink-0">
+      <div className="p-3 lg:p-4 border-t-2 border-white/10 shrink-0 space-y-3">
+        <div className="hidden lg:block">
+          <SpotifyConnectButton />
+        </div>
         {aura ? (
           <Link to={`/a/${getAuraCode()}`} className="block">
             <div

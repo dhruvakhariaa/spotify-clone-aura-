@@ -1,18 +1,22 @@
-import { Download, GripHorizontal, Heart, Volume2 } from "lucide-react";
+import { Download, GripHorizontal, Heart, Mic2, Shuffle, Volume2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { toPng } from "html-to-image";
 import { usePlayer } from "../../state/player";
 import { fmtTime } from "../../lib/catalog";
 import { isTrackLiked, toggleLikedSong } from "../../state/likedSongs";
+import { setIpodVisible } from "../../state/uiMode";
 import { playReactionSound } from "../../lib/reactions";
+import { IconPlay, IconPause, IconNext, IconPrev } from "./icons";
 
-const DEVICE_SRC = "/carvaan_go_device%201.svg";
 const MIN_DEVICE_WIDTH = 188;
 const MAX_DEVICE_WIDTH = 260;
 const DEFAULT_DEVICE_WIDTH = 204;
 const DEVICE_WIDTH_KEY = "aura.retro-player.width";
 const PLAYER_POS_KEY = "aura.retro-player.position";
+/** The docked PlayerBar hides while the iPod is open, so the iPod only needs a
+ *  small edge pad — it can be dragged anywhere across the viewport. */
+const BAR_CLEARANCE = 8;
 
 function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n));
@@ -104,7 +108,7 @@ export function RetroPlayer() {
         const height = rect?.height ?? 520;
         return {
           x: clamp(current.x, 8, Math.max(8, window.innerWidth - width - 8)),
-          y: clamp(current.y, 8, Math.max(8, window.innerHeight - height - 8)),
+          y: clamp(current.y, 8, Math.max(8, window.innerHeight - height - BAR_CLEARANCE)),
         };
       });
     };
@@ -141,7 +145,7 @@ export function RetroPlayer() {
       const height = rectNow?.height ?? 520;
       setPanelPos({
         x: clamp(moveEvent.clientX - drag.offsetX, 8, Math.max(8, window.innerWidth - width - 8)),
-        y: clamp(moveEvent.clientY - drag.offsetY, 8, Math.max(8, window.innerHeight - height - 8)),
+        y: clamp(moveEvent.clientY - drag.offsetY, 8, Math.max(8, window.innerHeight - height - BAR_CLEARANCE)),
       });
     };
 
@@ -179,7 +183,7 @@ export function RetroPlayer() {
       setDeviceWidth(nextWidth);
       setPanelPos({
         x: clamp(resize.panelLeft, 8, Math.max(8, window.innerWidth - panelWidth - 8)),
-        y: clamp(resize.panelTop, 8, Math.max(8, window.innerHeight - panelHeight - 8)),
+        y: clamp(resize.panelTop, 8, Math.max(8, window.innerHeight - panelHeight - BAR_CLEARANCE)),
       });
     };
 
@@ -239,8 +243,8 @@ export function RetroPlayer() {
   return (
     <aside
       ref={panelRef}
-      className={`fixed z-40 hidden rounded-lg border border-white/10 bg-[#0b0d16]/92 p-3 shadow-[0_22px_70px_rgba(0,0,0,.45)] backdrop-blur-xl xl:block ${
-        panelPos ? "" : "bottom-5 right-5"
+      className={`on-dark fixed z-40 hidden rounded-[1.5rem] border border-white/20 bg-[#0b0e1c]/55 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,.18),0_24px_70px_rgba(0,0,0,.45)] backdrop-blur-2xl backdrop-saturate-150 md:block ${
+        panelPos ? "" : "bottom-[104px] right-5"
       } ${dragging || resizing ? "select-none" : ""}`}
       style={{
         width: deviceWidth + 32,
@@ -262,6 +266,35 @@ export function RetroPlayer() {
           <div className="flex items-center gap-1">
             <button
               type="button"
+              onClick={() => {
+                playReactionSound("tap");
+                p.toggleShuffle();
+              }}
+              className={`grid size-7 place-items-center rounded-md border border-white/10 bg-white/[0.035] hover:text-white ${
+                p.shuffleEnabled ? "text-[#b7a0ff]" : "text-white/58"
+              }`}
+              aria-label={p.shuffleEnabled ? "Turn shuffle off" : "Turn shuffle on"}
+              title={p.shuffleEnabled ? "Shuffle on" : "Shuffle"}
+            >
+              <Shuffle size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                playReactionSound("tap");
+                p.toggleKaraoke();
+              }}
+              disabled={!p.canUseKaraoke && !p.karaokeMode}
+              className={`grid size-7 place-items-center rounded-md border border-white/10 bg-white/[0.035] hover:text-white disabled:cursor-not-allowed disabled:opacity-35 ${
+                p.karaokeMode ? "text-[#e8ff3a]" : "text-white/58"
+              }`}
+              aria-label={p.karaokeMode ? "Exit karaoke" : "Enter karaoke"}
+              title={p.canUseKaraoke ? (p.karaokeMode ? "Exit karaoke" : "Karaoke") : "Karaoke not available yet"}
+            >
+              <Mic2 size={14} />
+            </button>
+            <button
+              type="button"
               onClick={downloadDevice}
               className="grid size-7 place-items-center rounded-md border border-white/10 bg-white/[0.035] text-white/58 hover:text-white"
               aria-label="Download iPod image"
@@ -269,85 +302,100 @@ export function RetroPlayer() {
             >
               <Download size={14} />
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                playReactionSound("tap");
+                setIpodVisible(false);
+              }}
+              className="grid size-7 place-items-center rounded-md border border-white/10 bg-white/[0.035] text-white/58 hover:text-white"
+              aria-label="Hide iPod player"
+              title="Hide iPod"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+              </svg>
+            </button>
           </div>
         </div>
-        <div ref={deviceRef} className="relative w-full" style={{ width: deviceWidth }}>
-          <img
-            src={DEVICE_SRC}
-            alt=""
-            className="pointer-events-none block w-full select-none drop-shadow-[0_14px_34px_rgba(0,0,0,.32)]"
-            draggable={false}
+        <div
+          ref={deviceRef}
+          className="relative w-full overflow-hidden rounded-[1.4rem] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.015))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,.18),0_12px_30px_rgba(0,0,0,.32)]"
+          style={{ width: deviceWidth }}
+        >
+          <div
+            className="pointer-events-none absolute -top-10 left-1/2 h-24 w-32 -translate-x-1/2 rounded-full blur-2xl"
+            style={{ background: "color-mix(in srgb, var(--accent) 36%, transparent)" }}
           />
 
+          {/* screen */}
           <Link
             to="/app/now"
-            className="absolute left-[15.7%] top-[27.2%] block h-[29.6%] w-[68.8%] overflow-hidden bg-[#18182f] px-[5.4%] py-[4.7%] text-[#d6e4f1] shadow-[inset_0_0_0_1px_rgba(255,255,255,.08)]"
+            className="relative block overflow-hidden rounded-xl border border-white/12 bg-[#070a14]/85 px-3 py-2.5 text-[#eaf1ff] shadow-[inset_0_0_22px_rgba(0,0,0,.5)]"
           >
-            <div className="grid h-full min-w-0 grid-rows-[1fr_1fr_auto] gap-1.5">
-              <div className="min-w-0">
-                <div className="mb-0.5 flex items-center justify-between gap-2 text-[0.5rem] font-bold uppercase text-[#b8c9dc]/58">
-                  <span>Song</span>
-                  <Heart size={10} fill={liked ? "currentColor" : "none"} className={liked ? "text-[#b7a0ff]" : ""} />
-                </div>
-                <ScreenMarquee value={title} className="display text-[0.92rem] leading-[0.9] text-[#eef4ff]" />
+            <div className="flex items-center justify-between text-[0.5rem] font-bold uppercase tracking-wide text-[#9fb2cc]">
+              <span>{p.transport === "spotify" ? "Spotify" : p.karaokeMode ? "Karaoke" : "Now playing"}</span>
+              <Heart size={10} fill={liked ? "currentColor" : "none"} className={liked ? "text-[color:var(--accent)]" : ""} />
+            </div>
+            <ScreenMarquee value={title} className="display mt-1 text-[0.84rem] leading-[1] text-white" />
+            <ScreenMarquee value={artist} className="mt-0.5 text-[0.64rem] font-semibold uppercase tracking-wide text-[#bcccea]" />
+            <div className="mt-2 flex items-center gap-1.5 text-[0.5rem] font-bold tabular-nums text-[#9fb2cc]">
+              <span className="w-6 shrink-0">{fmtTime(p.currentTime)}</span>
+              <div className="h-1 min-w-0 flex-1 overflow-hidden rounded-full bg-white/15">
+                <div className="h-full rounded-full" style={{ width: `${pct}%`, background: "var(--accent)" }} />
               </div>
-              <div className="min-w-0">
-                <p className="mb-0.5 text-[0.5rem] font-bold uppercase text-[#b8c9dc]/58">Artist</p>
-                <ScreenMarquee value={artist} className="font-serif text-[0.68rem] uppercase leading-none text-[#eef4ff]/88" />
-              </div>
-              <div className="flex min-w-0 items-center gap-1.5 text-[0.5rem] font-bold text-[#c7d8ec]/78">
-                <span className="w-6 shrink-0 tabular-nums">{fmtTime(p.currentTime)}</span>
-                <div className="h-1 min-w-0 flex-1 rounded-full bg-white/18">
-                  <div className="h-full rounded-full bg-[#c7d8ec]" style={{ width: `${pct}%` }} />
-                </div>
-                <span className="w-6 shrink-0 text-right tabular-nums">{fmtTime(p.duration || 30)}</span>
-              </div>
+              <span className="w-6 shrink-0 text-right">{fmtTime(p.duration || 30)}</span>
             </div>
           </Link>
 
-          <div className="absolute left-1/2 top-[73%] h-[28%] w-[48%] -translate-x-1/2 -translate-y-1/2">
+          {/* glass click-wheel */}
+          <div className="relative mx-auto mt-3 aspect-square w-[82%]">
+            <div className="absolute inset-0 rounded-full border border-white/14 bg-white/[0.05] shadow-[inset_0_2px_12px_rgba(0,0,0,.4),inset_0_-2px_10px_rgba(255,255,255,.07)]" />
             <button
               onClick={toggleLike}
               disabled={!p.current}
-              className={`retro-wheel-button retro-wheel-button-top ${liked ? "is-on" : ""}`}
+              className="absolute left-1/2 top-[5%] grid size-7 -translate-x-1/2 place-items-center rounded-full text-white/70 transition-colors hover:text-white disabled:opacity-40"
               aria-label={liked ? "Remove from Liked Songs" : "Add to Liked Songs"}
               title={liked ? "Remove from Liked Songs" : "Add to Liked Songs"}
             >
-              <span className="sr-only">{liked ? "Remove from Liked Songs" : "Add to Liked Songs"}</span>
+              <Heart size={15} fill={liked ? "currentColor" : "none"} className={liked ? "text-[color:var(--accent)]" : ""} />
             </button>
             <button
               onClick={() => {
                 playReactionSound("tap");
                 p.prev();
               }}
-              className="retro-wheel-button retro-wheel-button-left"
+              className="absolute left-[4%] top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-full text-white/70 transition-colors hover:text-white"
               aria-label="Previous song"
               title="Previous"
             >
-              <span className="sr-only">Previous song</span>
+              <IconPrev s={17} />
             </button>
             <button
               onClick={() => {
                 playReactionSound("tap");
                 p.next();
               }}
-              className="retro-wheel-button retro-wheel-button-right"
+              className="absolute right-[4%] top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-full text-white/70 transition-colors hover:text-white"
               aria-label="Next song"
               title="Next"
             >
-              <span className="sr-only">Next song</span>
+              <IconNext s={17} />
             </button>
+            <span className="absolute bottom-[6%] left-1/2 -translate-x-1/2 text-[0.5rem] font-black uppercase tracking-[0.2em] text-white/35">
+              Aura
+            </span>
             <button
               onClick={() => {
                 playReactionSound("tap");
                 p.toggle();
               }}
               disabled={!p.current}
-              className="retro-wheel-button retro-wheel-button-bottom"
+              className="absolute left-1/2 top-1/2 grid size-[38%] -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white/16 bg-white/[0.09] text-white shadow-[0_4px_14px_rgba(0,0,0,.4),inset_0_1px_0_rgba(255,255,255,.2)] transition-transform hover:scale-105 disabled:opacity-40"
               aria-label={p.isPlaying ? "Pause" : "Play"}
               title={p.isPlaying ? "Pause" : "Play"}
             >
-              <span className="sr-only">{p.isPlaying ? "Pause" : "Play"}</span>
+              {p.isPlaying ? <IconPause s={18} /> : <IconPlay s={18} />}
             </button>
           </div>
         </div>

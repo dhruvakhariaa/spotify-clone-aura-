@@ -13,6 +13,23 @@ const PROXY = (import.meta.env.VITE_SPOTIFY_PROXY as string | undefined)?.replac
 const cache = new Map<string, string | undefined>();
 let backendPromise: Promise<boolean> | null = null;
 
+/** kebab-case slug used for local override files, e.g. "Billie Eilish" → "billie-eilish". */
+export function artistSlug(name: string) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+/** Optional local override: drop public/artists/<slug>.jpg to pin a real photo
+ *  (see public/PLACEHOLDERS.md). Resolves to the path if the file exists. */
+function localArtistImage(name: string): Promise<string | undefined> {
+  return new Promise((resolve) => {
+    const src = `/artists/${artistSlug(name)}.jpg`;
+    const probe = new Image();
+    probe.onload = () => resolve(src);
+    probe.onerror = () => resolve(undefined);
+    probe.src = src;
+  });
+}
+
 function backendReady(): Promise<boolean> {
   if (!PROXY) return Promise.resolve(false);
   if (!backendPromise) {
@@ -27,8 +44,11 @@ function backendReady(): Promise<boolean> {
 export async function artistImage(name: string): Promise<string | undefined> {
   if (cache.has(name)) return cache.get(name);
 
-  let img: string | undefined;
-  if (await backendReady()) {
+  // 1) Local override wins — your own photo at public/artists/<slug>.jpg.
+  let img: string | undefined = await localArtistImage(name);
+
+  // 2) Spotify proxy headshot (opt-in), then 3) iTunes artwork.
+  if (!img && (await backendReady())) {
     try {
       const r = await fetch(`${PROXY}/api/spotify/artist?name=${encodeURIComponent(name)}`, {
         signal: AbortSignal.timeout?.(3000),

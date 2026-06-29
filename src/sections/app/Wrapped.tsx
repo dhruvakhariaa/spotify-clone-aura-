@@ -12,7 +12,7 @@ export default function Wrapped() {
   return (
     <div className="px-5 py-8 md:px-10 md:py-12">
       <div className="mx-auto max-w-[1400px]">
-        <header className="mb-8 rounded-lg border border-white/10 bg-[#10121f] p-6 md:p-10">
+        <header className="on-dark mb-8 rounded-lg border border-white/10 bg-[#10121f] p-6 md:p-10">
           <p className="kicker mb-3 text-[#e8ff3a]">Live Wrapped</p>
           <h1 className="display t-lg max-w-4xl">Not once a year. Every session has a story.</h1>
           <p className="mt-5 max-w-2xl text-white/62">
