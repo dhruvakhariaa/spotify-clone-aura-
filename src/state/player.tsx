@@ -196,19 +196,25 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const api = useMemo<PlayerState>(() => {
     const a = () => audioRef.current;
     const setShuffle = (enabled: boolean) => {
+      // Pure: compute queue+index together, then set them separately. Doing the
+      // setIndex inside a setQueue updater made React (StrictMode) run it twice,
+      // re-randomizing and desyncing index/queue so the toggle looked dead.
+      const active = queue;
+      if (!active.length) {
+        setShuffleEnabled(enabled);
+        return;
+      }
+      const base = originalQueue.length ? originalQueue : active;
+      const activeCurrent = active[index] ?? current;
       setShuffleEnabled(enabled);
-      setQueue((active) => {
-        if (!active.length) return active;
-        const base = originalQueue.length ? originalQueue : active;
-        const activeCurrent = active[index] ?? current;
-        if (enabled) {
-          setIndex(0);
-          return shuffleKeepingCurrent(base, activeCurrent);
-        }
-        const restoredIndex = clampIndex(base.findIndex((track) => track.id === activeCurrent?.id), base);
-        setIndex(restoredIndex < 0 ? 0 : restoredIndex);
-        return base;
-      });
+      if (enabled) {
+        setQueue(shuffleKeepingCurrent(base, activeCurrent));
+        setIndex(0);
+      } else {
+        const restored = base.findIndex((track) => track.id === activeCurrent?.id);
+        setQueue(base);
+        setIndex(restored < 0 ? 0 : clampIndex(restored, base));
+      }
     };
 
     return {
