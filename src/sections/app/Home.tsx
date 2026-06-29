@@ -1,13 +1,24 @@
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import gsap from "gsap";
-import { ListMusic, Search, Sparkles, Users } from "lucide-react";
+import { Globe2, ListMusic, Loader2, Search, Shuffle, Sparkles, Users } from "lucide-react";
 import { usePlayer } from "../../state/player";
 import { useMyAura } from "../../state/aura";
 import { liveWrappedSummary } from "../../state/wrapped";
 import { ROSTER, nearestArtists, type RosterArtist } from "../../data/roster";
 import { PLAYLIST_CONCEPTS, WRAPPED_SEEDS } from "../../data/editorial";
-import { searchSongs, tracksByArtist, tracksFromArtists, type PlayableTrack } from "../../lib/catalog";
+import { tracksByArtist, tracksFromArtists, type PlayableTrack } from "../../lib/catalog";
+import {
+  dedupeTracks,
+  ensureAuraUniverse,
+  getCachedUniverseTracks,
+  hasSeenUniversePrompt,
+  markUniversePromptSeen,
+  searchSpotifyCatalog,
+  type UniverseTrack,
+} from "../../lib/universe";
+import { hasSpotifyClientId, startSpotifyLogin } from "../../lib/spotifyAuth";
+import { getActiveSpotifySession } from "../../lib/spotifyApi";
 import { GenerativeMark } from "../../components/GenerativeMark";
 import { TrackCard } from "../../components/app/TrackCard";
 import { ArtistCard } from "../../components/app/ArtistCard";
@@ -45,6 +56,11 @@ export default function Home() {
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [searching, setSearching] = useState(false);
   const [loadingArtist, setLoadingArtist] = useState<string | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [showUniversePrompt, setShowUniversePrompt] = useState(false);
+  const [universe, setUniverse] = useState<UniverseTrack[]>([]);
+  const [universeStatus, setUniverseStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [searchNeedsLogin, setSearchNeedsLogin] = useState(false);
   const wrapped = liveWrappedSummary();
 
   const featured: RosterArtist[] = useMemo(() => {
@@ -79,6 +95,10 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    setShowUniversePrompt(!hasSeenUniversePrompt());
+  }, []);
+
+  useEffect(() => {
     let alive = true;
     setStatus("loading");
     tracksFromArtists(featured.slice(0, 9).map((a) => a.name), 2)
@@ -96,11 +116,33 @@ export default function Home() {
   const runSearch = async (term: string) => {
     if (!term.trim()) {
       setResults(null);
+      setSearchNeedsLogin(false);
       return;
     }
+    const normalizedTerm = term.toLowerCase().replace(/[^a-z0-9]+/g, "");
+    const presentTracks = dedupeTracks([...universe, ...getCachedUniverseTracks(), ...radio]);
+    const localMatches = presentTracks.filter((track) => {
+      const haystack = `${track.title} ${track.artist} ${track.album ?? ""}`.toLowerCase().replace(/[^a-z0-9]+/g, "");
+      return haystack.includes(normalizedTerm);
+    });
+
+    if (localMatches.length) {
+      setSearchNeedsLogin(false);
+      setResults(localMatches.slice(0, 24));
+      return;
+    }
+
+    if (!getActiveSpotifySession()) {
+      setSearchNeedsLogin(true);
+      setResults([]);
+      return;
+    }
+
     setSearching(true);
+    setSearchNeedsLogin(false);
     try {
-      const r = await searchSongs(term, 18);
+      const r = await searchSpotifyCatalog(term, 24);
+      setUniverse((current) => dedupeTracks([...current, ...r]));
       setResults(r);
     } catch {
       setResults([]);
@@ -108,6 +150,20 @@ export default function Home() {
       setSearching(false);
     }
   };
+
+  const submitSearch = (term: string) => {
+    setQuery(term);
+    runSearch(term);
+  };
+
+  useEffect(() => {
+    const term = query.trim();
+    if (term.length < 3) return;
+    const id = window.setTimeout(() => runSearch(term), 550);
+    return () => window.clearTimeout(id);
+    // Search intentionally follows the visible query value; supporting catalogs are read inside runSearch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
 
   const playArtist = async (name: string) => {
     setLoadingArtist(name);
@@ -126,10 +182,51 @@ export default function Home() {
     else p.play(list, i);
   };
 
+  const enterUniverse = async (playNow = true) => {
+    markUniversePromptSeen();
+    setShowUniversePrompt(false);
+    setUniverseStatus("loading");
+    try {
+      const tracks = await ensureAuraUniverse();
+      setUniverse(tracks);
+      setUniverseStatus("ready");
+      if (playNow && tracks.length) p.shufflePlay(tracks);
+    } catch {
+      setUniverseStatus("error");
+    }
+  };
+
+  const skipUniverse = () => {
+    markUniversePromptSeen();
+    setShowUniversePrompt(false);
+  };
+
   return (
     <div className="px-5 py-8 md:px-10 md:py-12">
+      {showUniversePrompt && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/62 px-5 backdrop-blur-md">
+          <div className="on-dark w-full max-w-xl rounded-lg border border-white/14 bg-[#10121f]/95 p-6 shadow-[0_30px_100px_rgba(0,0,0,.48)]">
+            <div className="mb-8 grid size-12 place-items-center rounded-full bg-[color:var(--accent)] text-white">
+              <Globe2 size={24} />
+            </div>
+            <p className="kicker mb-3 text-white/45">AURA Universe</p>
+            <h2 className="display text-4xl leading-none md:text-5xl">Do you want to listen to all songs in the AURA Universe?</h2>
+            <p className="mt-5 text-sm leading-6 text-white/62">
+              We will build a large playable universe from the current artist roster. Spotify Premium users get full-track queues; everyone else stays on preview playback.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button onClick={() => enterUniverse(true)} className="btn-blue inline-flex items-center gap-2">
+                Enter Universe <Globe2 size={18} />
+              </button>
+              <button onClick={skipUniverse} className="btn-ghost">
+                Keep Aura Radio
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="mx-auto max-w-[1500px]">
-        <section className="home-rise relative mb-8 overflow-hidden rounded-lg border border-white/10 bg-[#10121f] p-5 md:p-7 lg:p-8">
+        <section className="home-rise on-dark relative mb-8 overflow-hidden rounded-lg border border-white/10 bg-[#10121f] p-5 md:p-7 lg:p-8">
           {aura && (
             <div className="home-mark pointer-events-none absolute -right-16 -top-16 h-80 w-80 opacity-45 md:h-[34rem] md:w-[34rem]">
               <GenerativeMark aura={aura} />
@@ -150,7 +247,7 @@ export default function Home() {
                 )}
               </h1>
               <p className="mt-4 max-w-xl text-sm leading-6 text-white/62 md:text-base">
-                Premium recommendations, artist-led moments, India-focused concerts, and a live identity that changes as you listen.
+                Artist-led moments, India-first concerts, and an identity that shifts every time you press play.
               </p>
               {!aura && (
                 <Link to="/onboard" className="btn-blue mt-7 inline-flex items-center gap-2">
@@ -162,7 +259,8 @@ export default function Home() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                runSearch(query);
+                const submitted = searchInputRef.current?.value || query;
+                submitSearch(submitted);
               }}
               className="rounded-lg border border-white/10 bg-black/25 p-3 backdrop-blur-md"
             >
@@ -170,12 +268,21 @@ export default function Home() {
               <div className="flex items-center gap-2">
                 <Search className="ml-2 shrink-0 text-white/42" size={20} />
                 <input
+                  name="search"
+                  ref={searchInputRef}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Find artists, songs, moods..."
                   className="min-w-0 flex-1 bg-transparent py-3 text-sm outline-none placeholder:text-white/32"
                 />
-                <button type="submit" className="btn-blue shrink-0 px-5 py-3 text-xs">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    const submitted = e.currentTarget.form?.querySelector<HTMLInputElement>('input[name="search"]')?.value || query;
+                    submitSearch(submitted);
+                  }}
+                  className="btn-blue shrink-0 px-5 py-3 text-xs"
+                >
                   {searching ? "..." : "Go"}
                 </button>
               </div>
@@ -197,6 +304,21 @@ export default function Home() {
                 clear
               </button>
             </div>
+            {searchNeedsLogin && (
+              <div className="mb-5 rounded-lg border border-[#1db954]/35 bg-[#1db954]/[0.08] p-4">
+                <p className="font-bold text-white">This song is not in your current AURA catalog yet.</p>
+                <p className="mt-1 text-sm text-white/58">
+                  Connect Spotify to search beyond the songs already present and add Spotify-backed tracks to playlists.
+                </p>
+                <button
+                  onClick={() => void startSpotifyLogin()}
+                  disabled={!hasSpotifyClientId()}
+                  className="btn-blue mt-4 inline-flex px-5 py-3 text-xs disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {hasSpotifyClientId() ? "Login with Spotify" : "Add Spotify client ID"}
+                </button>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-3 2xl:grid-cols-6">
               {results.map((t, i) => (
                 <TrackCard key={t.id} track={t} index={i} isCurrent={p.current?.id === t.id} isPlaying={p.isPlaying} onPlay={playRadioFrom} />
@@ -207,6 +329,49 @@ export default function Home() {
 
         {!results && (
           <>
+            <section className="home-rise mb-10 rounded-lg border border-white/10 bg-white/[0.035] p-5 md:p-6">
+              <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <p className="kicker mb-2 text-white/42">AURA Universe</p>
+                  <h2 className="display text-3xl">All roster songs, app-shuffled.</h2>
+                  <p className="mt-2 max-w-2xl text-sm text-white/58">
+                    AURA controls the queue order directly, then hands Spotify URIs to Web Playback SDK when available.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => enterUniverse(false)}
+                    disabled={universeStatus === "loading"}
+                    className="btn-ghost inline-flex items-center gap-2 px-4 py-3 text-xs disabled:opacity-45"
+                  >
+                    {universeStatus === "loading" ? <Loader2 className="animate-spin" size={16} /> : <Globe2 size={16} />}
+                    Load Universe
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const tracks = universe.length ? universe : await ensureAuraUniverse();
+                      setUniverse(tracks);
+                      if (tracks.length) {
+                        p.shufflePlay(tracks);
+                      }
+                    }}
+                    disabled={universeStatus === "loading"}
+                    className="btn-blue inline-flex items-center gap-2 px-4 py-3 text-xs disabled:opacity-45"
+                  >
+                    <Shuffle size={16} /> Shuffle Play
+                  </button>
+                </div>
+              </div>
+              {universeStatus === "error" && <p className="text-sm text-[#ff7d7d]">Universe sync failed. Try connecting Spotify or check the network.</p>}
+              {universe.length > 0 && (
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-3 2xl:grid-cols-6">
+                  {universe.slice(0, 12).map((t, i) => (
+                    <TrackCard key={t.id} track={t} index={i} isCurrent={p.current?.id === t.id} isPlaying={p.isPlaying} onPlay={() => p.play(universe, i)} />
+                  ))}
+                </div>
+              )}
+            </section>
+
             <section className="home-rise mb-10">
               <div className="rounded-lg border border-white/10 bg-white/[0.035] p-5 md:p-6">
                 <div className="mb-5 flex items-center justify-between gap-4">

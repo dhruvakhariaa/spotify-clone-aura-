@@ -9,6 +9,7 @@ import Home from "./sections/app/Home";
 import NowPlaying from "./sections/app/NowPlaying";
 import Discover from "./sections/app/Discover";
 import Concerts from "./sections/app/Concerts";
+import ConcertDetail from "./sections/app/ConcertDetail";
 import Jam from "./sections/app/Jam";
 import Frequency from "./sections/app/Frequency";
 import Library from "./sections/app/Library";
@@ -31,6 +32,7 @@ export const router = createBrowserRouter([
       { path: "now", element: <NowPlaying /> },
       { path: "discover", element: <Discover /> },
       { path: "concerts", element: <Concerts /> },
+      { path: "concerts/:id", element: <ConcertDetail /> },
       { path: "library", element: <Library /> },
       { path: "jam", element: <Jam /> },
       { path: "jam/:room", element: <Jam /> },

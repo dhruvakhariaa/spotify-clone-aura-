@@ -16,6 +16,15 @@ export interface PlayableTrack {
   artwork?: string;
   /** Playable audio URL (a 30s preview). */
   url: string;
+  /** Spotify full-track identifiers when available. */
+  spotifyId?: string;
+  spotifyUri?: string;
+  spotifyUrl?: string;
+  /** Preview URL kept separately so karaoke/Spotify modes can swap audio sources safely. */
+  previewUrl?: string;
+  album?: string;
+  karaokeStatus?: "ready" | "pending" | "unavailable";
+  karaokeUrl?: string;
   durationSec: number;
   genre?: string;
   source: Source;
@@ -33,6 +42,8 @@ function mapItunes(x: any): PlayableTrack {
     artist: x.artistName,
     artwork: artUrl(x.artworkUrl100, 600),
     url: x.previewUrl,
+    previewUrl: x.previewUrl,
+    album: x.collectionName,
     durationSec: x.trackTimeMillis ? Math.round(x.trackTimeMillis / 1000) : 30,
     genre: x.primaryGenreName,
     source: "itunes",
@@ -74,11 +85,22 @@ export async function tracksByArtist(artist: string, limit = 12): Promise<Playab
   }).slice(0, limit);
 }
 
-/** A representative cover image for an artist (their top track's artwork). */
+/** Albums that aren't a single artist's own work — their covers look generic and
+ *  often collide across artists (e.g. two Bollywood singers → same "Best of" art). */
+const COMPILATION_RE = /\b(best of|greatest|hits|collection|world music|top \d+|vol\.?\s*\d+|various|mega|jukebox|mashup|non[-\s]?stop|all[-\s]?time|romantic songs|love songs)\b/i;
+
+/** A representative cover image for an artist. Prefers a cover from one of the
+ *  artist's own (non-compilation) releases so images stay distinct and on-brand. */
 export async function artistCover(artist: string): Promise<string | undefined> {
   try {
-    const t = await tracksByArtist(artist, 1);
-    return t[0]?.artwork;
+    const rows = await itunes({ term: artist, entity: "song", limit: "25", attribute: "artistTerm" });
+    const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const want = norm(artist);
+    const mine = rows.filter(
+      (x) => x.artworkUrl100 && (norm(x.artistName ?? "").includes(want) || want.includes(norm(x.artistName ?? "")))
+    );
+    const preferred = mine.find((x) => x.collectionName && !COMPILATION_RE.test(x.collectionName)) ?? mine[0];
+    return artUrl(preferred?.artworkUrl100, 600);
   } catch {
     return undefined;
   }

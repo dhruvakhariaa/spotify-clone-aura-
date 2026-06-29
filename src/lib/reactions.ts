@@ -119,18 +119,6 @@ function installRouteSoundStop() {
   window.addEventListener("hashchange", stop);
   window.addEventListener("pagehide", stop);
   window.addEventListener("beforeunload", stop);
-
-  const originalPushState = window.history.pushState.bind(window.history);
-  const originalReplaceState = window.history.replaceState.bind(window.history);
-
-  window.history.pushState = (...args) => {
-    stop();
-    return originalPushState(...args);
-  };
-  window.history.replaceState = (...args) => {
-    stop();
-    return originalReplaceState(...args);
-  };
 }
 
 function getAudioContext() {
@@ -154,7 +142,21 @@ export function playReactionSound(tone: ReactionTone = "tap") {
     if (isManagedTone(tone)) stopManagedSounds();
     const audio = new Audio(audioFile);
     audio.volume = tone === "tap" ? 0.45 : tone === "cursor" ? 0.18 : 0.72;
-    audio.currentTime = AUDIO_START_OFFSETS[tone] ?? 0;
+    const startOffset = AUDIO_START_OFFSETS[tone] ?? 0;
+    if (startOffset > 0) {
+      try {
+        audio.currentTime = startOffset;
+      } catch {
+        audio.addEventListener(
+          "loadedmetadata",
+          () => {
+            const safeOffset = Number.isFinite(audio.duration) ? Math.min(startOffset, Math.max(0, audio.duration - 0.05)) : startOffset;
+            audio.currentTime = safeOffset;
+          },
+          { once: true }
+        );
+      }
+    }
     if (isManagedTone(tone)) {
       managedAudios.add(audio);
       audio.addEventListener("ended", () => managedAudios.delete(audio), { once: true });

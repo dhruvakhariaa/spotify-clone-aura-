@@ -30,7 +30,7 @@ function clientId() {
 }
 
 export function spotifyRedirectUri() {
-  return `${window.location.origin}/auth/spotify/callback`;
+  return import.meta.env.VITE_SPOTIFY_REDIRECT_URI || `${window.location.origin}/auth/spotify/callback`;
 }
 
 function randomString(length: number) {

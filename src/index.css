@@ -17,8 +17,8 @@
   --color-smoke: #10121f; /* slightly blue-tinted panels */
   --color-ash: #1b1e30;
 
-  --font-display: "Archivo", "Arial Black", sans-serif;
-  --font-sans: "Space Grotesk", system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque", "Archivo", sans-serif;
+  --font-sans: "Hanken Grotesk", system-ui, sans-serif;
 }
 
 :root {
@@ -29,6 +29,17 @@
   --accent-2: #e8ff3a;
   --brand: #2b3bff;
   --brand-pop: #e8ff3a;
+
+  /* Semantic surface/text tokens — resolve per theme, no !important needed.
+     Prefer these over raw text-white/* + bg-black/* utilities going forward. */
+  --text-1: #f5f4ec; /* primary copy */
+  --text-2: rgba(245, 244, 236, 0.62); /* muted */
+  --text-3: rgba(245, 244, 236, 0.4); /* faint */
+  --surface-1: #10121f; /* raised panel */
+  --surface-2: #1b1e30; /* deeper panel */
+  --surface-glass: rgba(13, 15, 26, 0.55); /* translucent base for .glass */
+  --hairline: rgba(255, 255, 255, 0.09);
+  --glass-shadow: 0 16px 50px rgba(0, 0, 0, 0.4);
   color-scheme: dark;
 }
 
@@ -39,6 +50,15 @@ html[data-theme="light"] {
   --color-ash: #e6e1d4;
   --accent: #2b3bff;
   --accent-2: #d6ec00;
+
+  --text-1: #14151d;
+  --text-2: rgba(20, 21, 29, 0.64);
+  --text-3: rgba(20, 21, 29, 0.42);
+  --surface-1: #fffdf5;
+  --surface-2: #ece7da;
+  --surface-glass: rgba(255, 255, 255, 0.62);
+  --hairline: rgba(20, 21, 29, 0.12);
+  --glass-shadow: 0 16px 50px rgba(20, 21, 29, 0.12);
   color-scheme: light;
 }
 
@@ -76,9 +96,9 @@ html.lenis body {
 /* ---------- Typographic primitives ---------- */
 .display {
   font-family: var(--font-display);
-  font-weight: 900;
-  line-height: 0.84;
-  letter-spacing: 0;
+  font-weight: 800;
+  line-height: 0.92;
+  letter-spacing: -0.015em;
   text-transform: uppercase;
 }
 .kicker {
@@ -193,6 +213,35 @@ html.lenis body {
   background: linear-gradient(180deg, rgba(43, 59, 255, 0.06), rgba(255, 255, 255, 0.01));
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 1rem;
+}
+
+/* ---------- Glass (refined-hybrid depth) ---------- */
+.glass {
+  background: var(--surface-glass);
+  backdrop-filter: blur(18px) saturate(1.5);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  border: 1px solid var(--hairline);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), var(--glass-shadow);
+}
+.glass-strong {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 42%),
+    color-mix(in srgb, var(--surface-glass) 88%, var(--color-ink));
+  backdrop-filter: blur(32px) saturate(1.7);
+  -webkit-backdrop-filter: blur(32px) saturate(1.7);
+  border: 1px solid var(--hairline);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), var(--glass-shadow);
+}
+
+/* "Dark glass island" — panels that stay intentionally dark in BOTH themes.
+   Pins text to light tokens so headings never go dark-on-dark in light mode
+   (fixes the Home/Concerts/Wrapped hero contrast regression). */
+.on-dark {
+  --text-1: #f5f4ec;
+  --text-2: rgba(245, 244, 236, 0.66);
+  --text-3: rgba(245, 244, 236, 0.44);
+  --hairline: rgba(255, 255, 255, 0.12);
+  color: var(--text-1);
 }
 .btn-ghost {
   font-family: var(--font-sans);
@@ -370,6 +419,20 @@ html.lenis body {
   color: var(--color-ink);
 }
 
+/* Keyboard focus ring — restores a visible focus state app-wide (many controls
+   set outline-none). Only shows for keyboard users via :focus-visible. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 10px;
@@ -415,6 +478,25 @@ html[data-theme="light"] .surface {
   background: linear-gradient(180deg, rgba(43, 59, 255, 0.075), rgba(18, 19, 26, 0.025));
   border-color: rgba(18, 19, 26, 0.12);
 }
+/* Inside a .on-dark island the panel stays dark, so re-light any text that the
+   compat layer above would otherwise force dark. Also re-light arbitrary
+   text-[color:var(--color-paper)] headings by flipping the token locally. */
+html[data-theme="light"] .on-dark {
+  --color-paper: #f5f4ec;
+}
+html[data-theme="light"] .on-dark :where(.text-white) {
+  color: #f5f4ec !important;
+}
+html[data-theme="light"] .on-dark :where([class*="text-white/"]) {
+  color: rgba(245, 244, 236, 0.66) !important;
+}
+/* Photo-card scrims must stay dark inside an island so overlaid text reads. */
+html[data-theme="light"] .on-dark :where([class*="from-black"]) {
+  --tw-gradient-from: rgba(0, 0, 0, 0.88) var(--tw-gradient-from-position) !important;
+}
+html[data-theme="light"] .on-dark :where([class*="via-black"]) {
+  --tw-gradient-via: rgba(0, 0, 0, 0.42) var(--tw-gradient-via-position) !important;
+}
 html[data-theme="light"] .chip {
   background: #ffffff;
 }
@@ -446,6 +528,58 @@ html[data-theme="light"] ::-webkit-scrollbar-track {
 }
 html[data-theme="light"] ::-webkit-scrollbar-thumb {
   background: rgba(18, 19, 26, 0.2);
+}
+html[data-theme="light"] .landing-hero {
+  background: #f7f4ea;
+}
+html[data-theme="light"] .landing-hero-image {
+  opacity: 0.18 !important;
+  filter: saturate(0.85) contrast(0.95);
+}
+html[data-theme="light"] .landing-hero-side-scrim {
+  background: linear-gradient(90deg, #f7f4ea 0%, rgba(247, 244, 234, 0.94) 48%, rgba(247, 244, 234, 0.68) 100%) !important;
+}
+html[data-theme="light"] .landing-hero-bottom-scrim {
+  background: linear-gradient(180deg, rgba(247, 244, 234, 0.2) 0%, rgba(247, 244, 234, 0.5) 58%, #f7f4ea 100%) !important;
+}
+html[data-theme="light"] .landing-hero-copy {
+  color: #12131a;
+}
+html[data-theme="light"] .hero-artist-panel {
+  background: rgba(255, 255, 255, 0.76) !important;
+  border-color: rgba(18, 19, 26, 0.12) !important;
+  box-shadow: 0 24px 80px rgba(18, 19, 26, 0.14);
+}
+html[data-theme="light"] .hero-artist {
+  border-color: rgba(18, 19, 26, 0.1) !important;
+  background: rgba(18, 19, 26, 0.045) !important;
+}
+html[data-theme="light"] .landing-stat-strip,
+html[data-theme="light"] .aura-identity-card {
+  background: #fffdf5 !important;
+  border-color: rgba(18, 19, 26, 0.12) !important;
+}
+html[data-theme="light"] .aura-identity-card .hero-mark {
+  opacity: 0.36 !important;
+}
+html[data-theme="light"] .selectable-artist {
+  background: rgba(18, 19, 26, 0.04) !important;
+  border-color: rgba(18, 19, 26, 0.08) !important;
+}
+html[data-theme="light"] .selectable-artist:hover {
+  background: rgba(43, 59, 255, 0.055) !important;
+  border-color: rgba(43, 59, 255, 0.22) !important;
+}
+html[data-theme="light"] .selectable-artist :where([class*="ring-offset"]) {
+  --tw-ring-offset-color: #f7f4ea !important;
+}
+html[data-theme="light"] .display-card {
+  box-shadow: none !important;
+  border-color: rgba(18, 19, 26, 0.12) !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+}
+html[data-theme="light"] .display-card:hover {
+  box-shadow: 0 10px 24px rgba(18, 19, 26, 0.06) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

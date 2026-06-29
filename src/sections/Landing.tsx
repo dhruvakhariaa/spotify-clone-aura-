@@ -1,34 +1,23 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import gsap from "gsap";
 import { ArrowUpRight, CalendarDays, Headphones, Radio, Search, Sparkles, Users } from "lucide-react";
 import { useLenis } from "../hooks/useLenis";
 import { GenerativeMark } from "../components/GenerativeMark";
 import { ThemeToggle } from "../components/ThemeToggle";
-import { artistImage } from "../lib/artistImage";
 import { deriveAura } from "../lib/deriveAura";
 import { CONCERTS, EDITORIAL_IMAGES, HERO_ARTISTS, PLAYLIST_CONCEPTS } from "../data/editorial";
 
 function ArtistPortrait({ name, pullQuote, index }: { name: string; pullQuote: string; index: number }) {
-  const [img, setImg] = useState<string>();
-
-  useEffect(() => {
-    let alive = true;
-    artistImage(name).then((url) => alive && setImg(url));
-    return () => {
-      alive = false;
-    };
-  }, [name]);
-
+  // Editorial atmospheric photography rather than iTunes album art, which
+  // misrepresents artists (e.g. a film poster for a singer). The bold name +
+  // pull-quote carry the identity; real headshots arrive with the Spotify proxy.
+  const editorial = EDITORIAL_IMAGES[index % EDITORIAL_IMAGES.length];
   return (
-    <div className={`hero-artist group relative overflow-hidden rounded-lg border border-white/12 bg-white/[0.04] ${
+    <div className={`hero-artist on-dark group relative overflow-hidden rounded-lg border border-white/12 bg-white/[0.04] ${
       index === 0 ? "min-h-[230px] md:min-h-[270px]" : "min-h-[124px]"
     }`}>
-      {img ? (
-        <img src={img} alt={name} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
-      ) : (
-        <img src={EDITORIAL_IMAGES[index % EDITORIAL_IMAGES.length].src} alt="" className="absolute inset-0 h-full w-full object-cover" />
-      )}
+      <img src={editorial.src} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 p-4">
         <p className={`${index === 0 ? "text-2xl" : "text-xl"} display leading-none`}>{name}</p>
@@ -114,11 +103,11 @@ export default function Landing() {
               Music identity. Real artists. India first.
             </p>
             <h1 className="gsap-rise display t-hero max-w-[640px] leading-[0.92]">
-              A music app with a human pulse.
+              Your taste has a face.
             </h1>
             <p className="gsap-rise mt-6 max-w-lg text-base leading-7 text-white/72 md:text-lg md:leading-8">
-              Search, play, build Aura-native playlists, find concerts, and watch your listening turn into a
-              living identity. Familiar like Spotify, personal enough to feel made for you.
+              Press play and watch a living identity take shape — your Aura. Search, jam, and build
+              Aura-native playlists. Spotify-familiar, unmistakably you.
             </p>
             <div className="gsap-rise mt-8 flex flex-wrap gap-3">
               <Link to="/onboard" className="btn-blue inline-flex items-center gap-2">

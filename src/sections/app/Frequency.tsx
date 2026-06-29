@@ -94,10 +94,10 @@ export default function Frequency() {
 
   return (
     <div
-      className="relative min-h-full flex flex-col items-center justify-center px-5 py-12 text-center overflow-hidden"
+      className="relative min-h-full flex flex-col items-center justify-center px-5 py-8 text-center overflow-hidden"
       style={{ ["--accent" as string]: aura.archetype.accent, ["--accent-2" as string]: aura.archetype.accent2 }}
     >
-      <div className="relative w-[min(86vw,620px)] aspect-square mb-8">
+      <div className="relative w-[min(64vw,440px)] aspect-square mb-6">
         <div className="absolute inset-0"><ListenerField aura={aura} count={count} /></div>
         <div className="absolute inset-0 grid place-items-center">
           <div className="w-[38%] h-[38%]"><GenerativeMark aura={aura} /></div>
@@ -105,7 +105,7 @@ export default function Frequency() {
       </div>
 
       <p className="kicker text-white/45 mb-3">Right now</p>
-      <h1 className="display leading-none mb-4" style={{ fontSize: "clamp(3rem,9vw,6rem)" }}>
+      <h1 className="display leading-none mb-4" style={{ fontSize: "clamp(2.6rem,7vw,4.6rem)" }}>
         <span style={{ color: aura.archetype.accent }}>{count.toLocaleString()}</span> souls
       </h1>
       <p className="text-xl text-white/70 max-w-md">
