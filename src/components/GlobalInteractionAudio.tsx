@@ -11,7 +11,7 @@ export function GlobalInteractionAudio() {
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
-      const interactive = target.closest("button, a, [role='button'], input[type='range']");
+      const interactive = target.closest("button, [role='button']");
       if (!interactive) return;
       if (interactive.hasAttribute("disabled") || interactive.getAttribute("aria-disabled") === "true") return;
       if (interactive.hasAttribute("data-audio-muted")) return;
