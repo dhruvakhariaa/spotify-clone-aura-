@@ -86,7 +86,7 @@ export default function ConcertDetail() {
             </section>
 
             {/* AURA fan-seat banner */}
-            <section className="surface relative overflow-hidden p-6">
+            <section className="on-dark relative overflow-hidden rounded-2xl border border-white/10 bg-[#10121f] p-6">
               <div
                 className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full blur-3xl"
                 style={{ background: "color-mix(in srgb, var(--accent) 30%, transparent)" }}
@@ -117,7 +117,7 @@ export default function ConcertDetail() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-[#0a0c16] p-5 md:p-7">
+              <div className="on-dark rounded-2xl border border-white/10 bg-[#0a0c16] p-5 md:p-7">
                 {/* stage */}
                 <div className="mx-auto mb-6 w-[62%] rounded-md bg-[linear-gradient(180deg,color-mix(in_srgb,var(--accent)_60%,#fff),var(--accent))] py-2 text-center text-[0.62rem] font-black uppercase tracking-[0.3em] text-[#07080f] shadow-[0_0_30px_color-mix(in_srgb,var(--accent)_45%,transparent)]">
                   Stage
@@ -171,7 +171,7 @@ export default function ConcertDetail() {
 
           {/* ---------- STICKY BUY SUMMARY ---------- */}
           <aside className="lg:sticky lg:top-6">
-            <div className="rounded-2xl border border-white/12 bg-[#10121f] p-5 shadow-[0_24px_60px_rgba(0,0,0,.4)]">
+            <div className="on-dark rounded-2xl border border-white/12 bg-[#10121f] p-5 shadow-[0_24px_60px_rgba(0,0,0,.4)]">
               <p className="kicker mb-3 text-white/45">Your ticket</p>
 
               {selectedSection ? (
