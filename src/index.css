@@ -491,10 +491,18 @@ html[data-theme="light"] .surface {
    text-[color:var(--color-paper)] headings by flipping the token locally. */
 html[data-theme="light"] .on-dark {
   --color-paper: #f5f4ec;
+  /* Base colour so non-text-white descendants (e.g. .display headings that just
+     inherit) stay light inside an always-dark island. */
+  color: #f5f4ec;
 }
+/* Cover both the island element itself (when it carries text-white, e.g. the
+   landing <main>) and its descendants. The extra .on-dark class raises
+   specificity above the general light remap so these win. */
+html[data-theme="light"] .on-dark:where(.text-white),
 html[data-theme="light"] .on-dark :where(.text-white) {
   color: #f5f4ec !important;
 }
+html[data-theme="light"] .on-dark:where([class*="text-white/"]),
 html[data-theme="light"] .on-dark :where([class*="text-white/"]) {
   color: rgba(245, 244, 236, 0.66) !important;
 }

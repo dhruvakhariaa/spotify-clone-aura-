@@ -32,7 +32,7 @@ export default function Landing() {
   }, [active]);
 
   return (
-    <main className="relative h-screen w-screen overflow-hidden bg-[#08060f] text-white">
+    <main className="on-dark relative h-screen w-screen overflow-hidden bg-[#08060f] text-white">
       {/* On mobile, free-roaming hotspots are hard to tap — the scene stays a
           static backdrop and concepts move into a tap-friendly row below. */}
       <PixelCity reduced={reduced || isMobile} onSelect={setActive} />

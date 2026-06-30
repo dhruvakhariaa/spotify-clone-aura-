@@ -349,7 +349,7 @@ export function MotionTakeover({ concept, onClose }: { concept: MotionConcept; o
 
   return (
     <div
-      className="fixed inset-0 z-[100]"
+      className="on-dark fixed inset-0 z-[100]"
       style={{
         ["--accent" as string]: concept.accent,
         background: `radial-gradient(120% 90% at 50% 42%, ${concept.accent}33, #0a0814 55%, #040308)`,
