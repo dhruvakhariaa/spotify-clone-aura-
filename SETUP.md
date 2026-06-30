@@ -126,6 +126,47 @@ through so the showcase stays usable local-first.
 
 ---
 
+## 2c) Deploy to Vercel
+
+The app is a Vite SPA. [`vercel.json`](./vercel.json) sets the build (`npm run
+build` → `dist`) and rewrites every path to `index.html` so client-side routes
+(`/app/*`, `/jam/:room`, `/s/:a`, `/a/:code`) survive a refresh / direct link.
+
+### a. Create the project
+- **Dashboard:** import the GitHub repo at <https://vercel.com/new> (framework
+  auto-detects as Vite). — or —
+- **CLI:** `npx vercel login` then `npx vercel` (first run links/creates the
+  project), and `npx vercel --prod` to promote.
+
+### b. Set environment variables (Vercel → Project → Settings → Environment Variables)
+These are `VITE_`-prefixed, so they're baked in at **build time** — set them
+before deploying (or redeploy after changing):
+```
+VITE_SUPABASE_URL          = https://YOUR-PROJECT.supabase.co
+VITE_SUPABASE_ANON_KEY     = <anon public key>
+VITE_SPOTIFY_CLIENT_ID     = <spotify client id>
+```
+`VITE_SPOTIFY_REDIRECT_URI` is **not needed in prod** — the app derives the
+callback from the live origin when the env value's origin doesn't match (see
+`spotifyRedirectUri()`). Leave it for local dev only. Do **not** put
+`SPOTIFY_CLIENT_SECRET` here unless you also deploy the `server/` proxy.
+
+### c. Point the redirect URLs at the deployed domain
+- **Supabase → Authentication → URL Configuration → Redirect URLs:** add
+  `https://YOUR-APP.vercel.app/auth/callback` (and your custom domain). Also set
+  the **Site URL** to the Vercel origin.
+- **Spotify dashboard → your app → Redirect URIs:** add
+  `https://YOUR-APP.vercel.app/auth/spotify/callback`.
+- **Google OAuth** still points at the Supabase callback (`…supabase.co/auth/v1/
+  callback`) — no change needed there.
+
+### d. Verify after deploy
+Open the Vercel URL → sign up / Google / guest → onboard → app. Test the
+shareable flows that need a public URL: **Jam** (`/app/jam` → copy room link in a
+second browser) and **Soulmate** (`/a/:code` → Find your Soulmate → `/s/:a/:b`).
+
+---
+
 ## 3) Real artist headshots (optional)
 
 iTunes artwork is used by default. For real Spotify **headshots**, run the

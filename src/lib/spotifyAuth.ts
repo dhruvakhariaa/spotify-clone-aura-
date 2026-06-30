@@ -30,7 +30,18 @@ function clientId() {
 }
 
 export function spotifyRedirectUri() {
-  return import.meta.env.VITE_SPOTIFY_REDIRECT_URI || `${window.location.origin}/auth/spotify/callback`;
+  // Use the configured URI only when it matches the current origin (local dev on
+  // 127.0.0.1). On any other origin (e.g. the deployed Vercel domain) derive it
+  // from the runtime origin so the callback works without env reconfiguration.
+  const configured = import.meta.env.VITE_SPOTIFY_REDIRECT_URI;
+  if (configured) {
+    try {
+      if (new URL(configured).origin === window.location.origin) return configured;
+    } catch {
+      /* malformed env — fall through */
+    }
+  }
+  return `${window.location.origin}/auth/spotify/callback`;
 }
 
 function randomString(length: number) {
