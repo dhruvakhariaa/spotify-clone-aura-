@@ -113,7 +113,11 @@ export default function ConcertDetail() {
               <div className="mb-4 flex items-end justify-between gap-4">
                 <div>
                   <h2 className="display text-2xl md:text-3xl">Pick your seat</h2>
-                  <p className="mt-1 text-sm text-white/55">Your AURA Fan Seats glow. Resale-held seats are blocked.</p>
+                  <p className="mt-1 max-w-md text-sm text-white/60">
+                    Tap any <span className="font-bold text-white">available</span> tile to select it. The glowing{" "}
+                    <span className="font-bold text-[color:var(--accent)]">✦ Fan Seats</span> are held for you at face value;
+                    red tiles are blocked from resellers.
+                  </p>
                 </div>
               </div>
 
@@ -129,12 +133,12 @@ export default function ConcertDetail() {
                   <SeatRow sections={ringOf("upper")} maxW="100%" selected={selected} onPick={setSelected} canPick={canPick} />
                 </div>
 
-                {/* legend */}
-                <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/8 pt-4 text-[0.7rem] text-white/55">
-                  <Legend swatch="border-[color:var(--accent)] bg-[color:var(--accent)]/20" label="AURA Fan Seat" />
-                  <Legend swatch="border-white/20 bg-white/[0.05]" label="Available" />
-                  <Legend swatch="border-[#ff6a6a]/45 bg-[#ff6a6a]/12" label="Resale-blocked" />
-                  <Legend swatch="border-white/10 bg-white/[0.02]" label="Sold out" />
+                {/* legend with live counts */}
+                <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2.5 border-t border-white/8 pt-4 text-[0.72rem] text-white/60">
+                  <Legend swatch="border-[color:var(--accent)] bg-[color:var(--accent)]/25" label="Fan Seat" count={sections.filter((s) => s.reserved).length} />
+                  <Legend swatch="border-white/25 bg-white/[0.08]" label="Available" count={sections.filter((s) => !s.reserved && s.status === "available").length} />
+                  <Legend swatch="border-[#ff6a6a]/45 bg-[#ff6a6a]/12" label="Resale-blocked" count={sections.filter((s) => s.status === "scalper").length} />
+                  <Legend swatch="border-white/10 bg-white/[0.02]" label="Sold out" count={sections.filter((s) => s.status === "sold").length} />
                 </div>
               </div>
             </section>
@@ -251,11 +255,12 @@ function Chip({ icon, children }: { icon: React.ReactNode; children: React.React
   );
 }
 
-function Legend({ swatch, label }: { swatch: string; label: string }) {
+function Legend({ swatch, label, count }: { swatch: string; label: string; count?: number }) {
   return (
     <span className="inline-flex items-center gap-1.5">
-      <span className={`size-3 rounded-[3px] border ${swatch}`} />
-      {label}
+      <span className={`size-3.5 rounded-[4px] border ${swatch}`} />
+      <span className="font-bold">{label}</span>
+      {typeof count === "number" && <span className="text-white/40">({count})</span>}
     </span>
   );
 }
@@ -286,34 +291,51 @@ function SeatRow({
     <div className="mx-auto flex flex-wrap justify-center gap-2" style={{ maxWidth: maxW }}>
       {sections.map((s) => {
         const isSel = selected === s.id;
-        const base = "relative flex-1 min-w-[64px] rounded-lg border px-2 py-2 text-center transition-colors";
+        const base =
+          "relative flex min-w-[78px] flex-1 flex-col items-center gap-1 rounded-lg border px-2 py-2.5 text-center transition-all";
         let tone: string;
+        let status: string;
+        let statusTone: string;
         if (s.reserved) {
-          tone = "border-[color:var(--accent)] bg-[color:var(--accent)]/18 text-white hover:bg-[color:var(--accent)]/28";
+          tone = "border-[color:var(--accent)] bg-[color:var(--accent)]/15 text-white hover:bg-[color:var(--accent)]/25";
+          status = "Fan price";
+          statusTone = "text-[color:var(--accent)]";
         } else if (s.status === "available") {
-          tone = "border-white/16 bg-white/[0.05] text-white/80 hover:border-[color:var(--accent)] hover:bg-white/[0.08]";
+          tone = "border-white/20 bg-white/[0.06] text-white hover:border-[color:var(--accent)] hover:bg-white/[0.1]";
+          status = "Available";
+          statusTone = "text-emerald-300/80";
         } else if (s.status === "scalper") {
-          tone = "border-[#ff6a6a]/45 bg-[#ff6a6a]/12 text-[#ffb0b0] cursor-not-allowed";
+          tone = "border-[#ff6a6a]/40 bg-[#ff6a6a]/10 text-[#ffc4c4] cursor-not-allowed";
+          status = `Resale ${s.resaleMultiplier}×`;
+          statusTone = "text-[#ff8e8e]";
         } else {
-          tone = "border-white/10 bg-white/[0.02] text-white/30 cursor-not-allowed";
+          tone = "border-white/8 bg-white/[0.015] text-white/35 cursor-not-allowed";
+          status = "Sold out";
+          statusTone = "text-white/30";
         }
-        const ring = isSel ? "ring-2 ring-[color:var(--accent)] ring-offset-2 ring-offset-[#0a0c16]" : "";
+        const ring = isSel ? "ring-2 ring-[color:var(--accent)] ring-offset-2 ring-offset-[#0a0c16] scale-[1.03]" : "";
         return (
           <button
             key={s.id}
             disabled={!canPick(s)}
             onClick={() => canPick(s) && onPick(s.id)}
             className={`${base} ${tone} ${ring}`}
-            title={s.status === "scalper" ? `Held by resellers at ${s.resaleMultiplier}× — blocked` : s.label}
+            title={s.status === "scalper" ? `Held by resellers at ${s.resaleMultiplier}× — blocked` : `${s.label} · ${status}`}
           >
             {s.reserved && (
-              <span className="absolute -top-2 left-1/2 -translate-x-1/2 rounded-full bg-[color:var(--accent)] px-1.5 py-0.5 text-[0.5rem] font-black uppercase tracking-wide text-[#07080f]">
-                Fan
+              <span className="absolute -top-2 left-1/2 -translate-x-1/2 rounded-full bg-[color:var(--accent)] px-1.5 py-0.5 text-[0.5rem] font-black uppercase tracking-wide text-[#07080f] shadow-[0_0_10px_color-mix(in_srgb,var(--accent)_60%,transparent)]">
+                ✦ Fan
               </span>
             )}
-            <span className="block text-[0.7rem] font-bold leading-tight">{s.label}</span>
-            <span className="mt-0.5 block text-[0.6rem] leading-tight opacity-80">
-              {s.reserved ? inr(s.price) : s.status === "sold" ? "Sold" : s.status === "scalper" ? `Resale ${s.resaleMultiplier}×` : inr(s.price)}
+            {isSel && (
+              <span className="absolute -right-1.5 -top-1.5 grid size-4 place-items-center rounded-full bg-[color:var(--accent)] text-[#07080f]">
+                <Check size={11} strokeWidth={3.5} />
+              </span>
+            )}
+            <span className="block text-[0.74rem] font-black leading-tight">{s.label}</span>
+            <span className={`block text-[0.56rem] font-bold uppercase tracking-wide leading-none ${statusTone}`}>{status}</span>
+            <span className="block text-[0.66rem] font-bold leading-none opacity-90">
+              {s.status === "sold" ? "—" : inr(s.price)}
             </span>
           </button>
         );
