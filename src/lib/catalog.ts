@@ -7,6 +7,8 @@
  * when configured — iTunes only exposes album/track art.
  */
 
+import { isSpotifyPremium, spotifyCatalogSearch } from "./spotifyApi";
+
 export type Source = "itunes" | "spotify";
 
 export interface PlayableTrack {
@@ -60,14 +62,32 @@ async function itunes(params: Record<string, string>): Promise<any[]> {
   return Array.isArray(j.results) ? j.results : [];
 }
 
-/** Search songs by free text (artist, title, etc.). */
+/** Search songs by free text (artist, title, etc.). Premium-linked accounts get
+ *  Spotify results (full-track URIs); everyone else gets iTunes previews. */
 export async function searchSongs(term: string, limit = 24): Promise<PlayableTrack[]> {
+  if (await isSpotifyPremium()) {
+    try {
+      const spotify = await spotifyCatalogSearch(term, limit);
+      if (spotify.length) return spotify;
+    } catch {
+      /* fall through to iTunes */
+    }
+  }
   const rows = await itunes({ term, entity: "song", limit: String(limit) });
   return rows.filter((x) => x.previewUrl).map(mapItunes);
 }
 
-/** Top tracks for a specific artist (best-effort filter to that artist). */
+/** Top tracks for a specific artist (best-effort filter to that artist).
+ *  Premium-linked accounts get Spotify full-track results. */
 export async function tracksByArtist(artist: string, limit = 12): Promise<PlayableTrack[]> {
+  if (await isSpotifyPremium()) {
+    try {
+      const spotify = await spotifyCatalogSearch(`artist:${artist}`, limit);
+      if (spotify.length) return spotify.slice(0, limit);
+    } catch {
+      /* fall through to iTunes */
+    }
+  }
   const rows = await itunes({ term: artist, entity: "song", limit: String(limit * 2), attribute: "artistTerm" });
   const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
   const want = norm(artist);

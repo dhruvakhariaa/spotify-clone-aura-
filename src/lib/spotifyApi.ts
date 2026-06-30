@@ -79,3 +79,63 @@ export async function searchSpotifyTracks(term: string, limit = 20, market = "IN
   const params = new URLSearchParams({ q: term, type: "track", limit: String(limit), market });
   return spotifyFetch<any>(`search?${params.toString()}`);
 }
+
+// --- Premium-gated catalog routing ----------------------------------------
+// Full-length playback needs Spotify Premium (Web Playback SDK refuses full
+// tracks otherwise). We only re-source the catalog from Spotify when the linked
+// account is Premium; free/no-session keeps iTunes previews (which reliably have
+// audio, unlike many Spotify tracks whose preview_url is now null).
+
+let premiumCache: boolean | null = null;
+let premiumProbe: Promise<boolean> | null = null;
+
+export async function isSpotifyPremium(): Promise<boolean> {
+  if (!getActiveSpotifySession()) {
+    premiumCache = null;
+    return false;
+  }
+  if (premiumCache !== null) return premiumCache;
+  if (!premiumProbe) {
+    premiumProbe = getSpotifyProfile()
+      .then((p) => (premiumCache = p.product === "premium"))
+      .catch(() => (premiumCache = false))
+      .finally(() => {
+        premiumProbe = null;
+      });
+  }
+  return premiumProbe;
+}
+
+function mapSpotifyToPlayable(item: any): PlayableTrack | null {
+  if (!item?.id || !item?.uri || !item?.name) return null;
+  const artist = item.artists?.map((a: any) => a.name).join(", ") || "Unknown artist";
+  return {
+    id: `spotify-${item.id}`,
+    title: item.name,
+    artist,
+    artwork: item.album?.images?.[0]?.url,
+    url: item.preview_url ?? "",
+    previewUrl: item.preview_url ?? undefined,
+    spotifyId: item.id,
+    spotifyUri: item.uri,
+    spotifyUrl: item.external_urls?.spotify,
+    album: item.album?.name,
+    durationSec: item.duration_ms ? Math.round(item.duration_ms / 1000) : 30,
+    source: "spotify",
+  };
+}
+
+/** Spotify-backed catalog search → PlayableTracks carrying full-track URIs. */
+export async function spotifyCatalogSearch(term: string, limit = 24): Promise<PlayableTrack[]> {
+  const res = await searchSpotifyTracks(term, limit, "IN");
+  const items = Array.isArray(res?.tracks?.items) ? res.tracks.items : [];
+  return items.map(mapSpotifyToPlayable).filter((t: PlayableTrack | null): t is PlayableTrack => Boolean(t));
+}
+
+// Re-probe Premium whenever the Spotify session changes (connect / disconnect).
+if (typeof window !== "undefined") {
+  window.addEventListener("aura:spotify", () => {
+    premiumCache = null;
+    premiumProbe = null;
+  });
+}
