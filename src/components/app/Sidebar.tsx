@@ -25,7 +25,6 @@ export function Sidebar({ aura }: { aura: Aura | null }) {
           <span className="display hidden text-2xl lg:block">AURA</span>
         </Link>
         <div className="flex items-center gap-1.5">
-          <SpotifyConnectButton compact />
           <ThemeToggle compact />
         </div>
       </div>

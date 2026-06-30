@@ -11,7 +11,10 @@ export function GlobalInteractionAudio() {
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
-      const interactive = target.closest("button, [role='button']");
+      // Buttons get the default tap; links/elements that explicitly opt in via
+      // data-audio-tone keep their bespoke cue (e.g. the soulmate/make music on
+      // AuraReveal's <Link>s). Generic links + range sliders stay silent.
+      const interactive = target.closest("button, [role='button'], [data-audio-tone]");
       if (!interactive) return;
       if (interactive.hasAttribute("disabled") || interactive.getAttribute("aria-disabled") === "true") return;
       if (interactive.hasAttribute("data-audio-muted")) return;
