@@ -8,6 +8,7 @@ import { isTrackLiked, toggleLikedSong } from "../../state/likedSongs";
 import { setIpodVisible } from "../../state/uiMode";
 import { playReactionSound } from "../../lib/reactions";
 import { IconPlay, IconPause, IconNext, IconPrev } from "./icons";
+import { AddToPlaylist } from "./AddToPlaylist";
 
 const MIN_DEVICE_WIDTH = 188;
 const MAX_DEVICE_WIDTH = 260;
@@ -283,6 +284,9 @@ export function RetroPlayer() {
             >
               <Mic2 size={14} />
             </button>
+            <span className="grid size-7 place-items-center rounded-md border border-white/10 bg-white/[0.035]">
+              <AddToPlaylist track={p.current} size={14} align="right" />
+            </span>
             <button
               type="button"
               onClick={downloadDevice}

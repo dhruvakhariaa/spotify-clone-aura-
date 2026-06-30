@@ -4,6 +4,8 @@ import { usePlayer } from "../../state/player";
 import { useIpodVisible } from "../../state/uiMode";
 import { fmtTime } from "../../lib/catalog";
 import { IconPlay, IconPause, IconNext, IconPrev, IconVolume } from "./icons";
+import { LikeButton } from "./LikeButton";
+import { AddToPlaylist } from "./AddToPlaylist";
 
 export function PlayerBar() {
   const p = usePlayer();
@@ -81,8 +83,10 @@ export function PlayerBar() {
         </div>
       </div>
 
-      {/* volume + retro iPod toggle */}
+      {/* like + add-to-playlist + volume + retro iPod toggle */}
       <div className="hidden md:flex items-center gap-3 justify-self-end text-white/55">
+        <LikeButton track={p.current} size={18} />
+        <AddToPlaylist track={p.current} size={18} />
         <button
           type="button"
           onClick={ipod.toggle}
